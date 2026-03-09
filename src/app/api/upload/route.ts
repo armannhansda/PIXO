@@ -19,11 +19,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json(
-        { error: "File too large. Maximum size is 5 MB" },
-        { status: 400 },
-      );
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("File too large");
     }
 
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;

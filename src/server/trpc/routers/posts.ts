@@ -21,6 +21,7 @@ import {
   permissionMiddleware
 } from "../middlewares";
 import { rateLimitMiddleware } from "../middlewares/rateLimit";
+import { getCache, setCache } from "@/lib/cache";
 
 const slugInputSchema = z.object({ slug: z.string().min(1) });
 
@@ -166,6 +167,27 @@ async function fetchPost(ctx: Context, where: SQL<unknown>): Promise<PostRespons
 }
 
 export const postsRouter = createTRPCRouter({
+
+  //using cache
+  // list: publicProcedure.query(async ({ ctx }) => {
+  //   const cacheKey = "explore_posts";
+
+  //   const cached = await getCache(cacheKey);
+  //   if(cached){
+  //     return cached;
+  //   }
+
+  //   const postsData = await ctx.db.query.posts.findMany({
+  //     where: eq(posts.published, true),
+  //     orderBy: desc(posts.createdAt),
+  //     limit: 20,
+  //   });
+
+  //   await setCache(cacheKey, postsData, 60); // Cache for 60 seconds
+
+  //   return postsData;
+  // }),
+
   list: publicProcedure
     .input(z.object({
       limit: z.number().int().min(1).max(100).default(50),

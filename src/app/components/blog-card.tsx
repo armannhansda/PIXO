@@ -4,6 +4,8 @@ import { Heart, Bookmark, Clock, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { BlogPost } from "./mock-data.ts";
+import Image from "next/image.js";
+import { optimizeImage } from "@/lib/cloudinary.js";
 
 interface BlogCardProps {
   post: BlogPost;
@@ -44,9 +46,11 @@ export function BlogCard({
         <Link href={`/post/${post.id}`} className="block group">
           <div className="grid md:grid-cols-2 gap-6 bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
             <div className="aspect-[16/10] md:aspect-auto overflow-hidden">
-              <img
-                src={post.coverImage}
+              <Image
+                src={optimizeImage(post.coverImage)}
                 alt={post.title}
+                width={800}
+                height={450}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -78,9 +82,11 @@ export function BlogCard({
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
                       {post.author.avatar ? (
-                        <img
-                          src={post.author.avatar}
+                        <Image
+                          src={optimizeImage(post.author.avatar, 80)}
                           alt={post.author.name}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded-full object-cover"
                         />
                       ) : (
