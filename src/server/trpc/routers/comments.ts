@@ -11,6 +11,7 @@ import {
 } from "@/lib/validation/comments";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { validatedProcedure, authMiddleware } from "../middlewares";
+import { rateLimitMiddleware } from "../middlewares/rateLimit";
 
 export const commentsRouter = createTRPCRouter({
   // List comments for a post (public, top-level only with replies)
@@ -63,6 +64,7 @@ export const commentsRouter = createTRPCRouter({
 
   // Create a comment (authenticated)
   create: validatedProcedure(createCommentSchema)
+    .use(rateLimitMiddleware)
     .use(authMiddleware)
     .mutation(async ({ ctx, input }) => {
       const authorId = Number(ctx.user.id);

@@ -18,6 +18,7 @@ import {
 import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
 import { useRouter } from "next/navigation";
+import CircularLoading from "../components/circular-loading";
 
 const profileTabs = ["Posts", "Saved", "Likes"];
 
@@ -108,7 +109,7 @@ export default function ProfilePage() {
   if (hasToken === null || meLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading profile...</p>
+        <CircularLoading />
       </div>
     );
   }
@@ -323,9 +324,7 @@ export default function ProfilePage() {
           {activeTab === "Posts" && (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {postsLoading ? (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
-                  Loading posts...
-                </p>
+                <CircularLoading />
               ) : userPosts.length > 0 ? (
                 userPosts.map((post, i) => (
                   <motion.div
@@ -352,9 +351,7 @@ export default function ProfilePage() {
           {activeTab === "Saved" && (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {savedLoading ? (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
-                  Loading saved posts...
-                </p>
+                <CircularLoading />
               ) : savedPosts.length > 0 ? (
                 savedPosts.map((post, i) => (
                   <motion.div
@@ -377,9 +374,7 @@ export default function ProfilePage() {
           {activeTab === "Likes" && (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {likedLoading ? (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
-                  Loading liked posts...
-                </p>
+                <CircularLoading />
               ) : likedPosts.length > 0 ? (
                 likedPosts.map((post, i) => (
                   <motion.div

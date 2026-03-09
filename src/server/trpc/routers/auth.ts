@@ -11,18 +11,34 @@ import type { Context } from "../context";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { validatedProcedure, authMiddleware } from "../middlewares";
 import type { InferSelectModel } from "drizzle-orm";
+import { rateLimitMiddleware } from "../middlewares/rateLimit";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-/** Generate a username from name or email, appending random suffix for uniqueness */
-function generateUsername(name: string, email: string): string {
+/** Generate a unique username from name or email, retrying if it already exists in the DB */
+async function generateUsername(
+  db: Context["db"],
+  name: string,
+  email: string
+): Promise<string> {
   const base = name
     ? name.toLowerCase().replace(/[^a-z0-9]/g, "")
     : email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
-  const suffix = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0");
-  return `${base}${suffix}`;
+
+  for (let i = 0; i < 10; i++) {
+    const suffix = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    const candidate = `${base}${suffix}`;
+    const existing = await db.query.users.findFirst({
+      where: eq(users.username, candidate),
+      columns: { id: true },
+    });
+    if (!existing) return candidate;
+  }
+
+  // Fallback: use timestamp for guaranteed uniqueness
+  return `${base}${Date.now()}`;
 }
 
 const signupSchema = z.object({
@@ -90,7 +106,7 @@ export const authRouter = createTRPCRouter({
         .insert(users)
         .values({
           name,
-          username: generateUsername(name, email),
+          username: await generateUsername(ctx.db, name, email),
           email,
           password: hashedPassword,
           role: "author",
@@ -126,7 +142,7 @@ export const authRouter = createTRPCRouter({
     }
   }),
 
-  login: validatedProcedure(loginSchema).mutation(async ({ ctx, input }) => {
+  login: validatedProcedure(loginSchema).use(rateLimitMiddleware).mutation(async ({ ctx, input }) => {
     try {
       const { email, password } = input;
 
@@ -210,6 +226,16 @@ export const authRouter = createTRPCRouter({
     }
   }),
 
+  // logout mutation
+  // logout: publicProcedure.mutation(({ ctx }) => {
+  //   ctx.res.cookies.set("session-token", "", {
+  //   maxAge: 0,
+  //   path: "/"
+  // });
+
+  // return { success: true };
+  // });
+
   // Get current authenticated user
   me: publicProcedure
     .use(authMiddleware)
@@ -259,7 +285,7 @@ export const authRouter = createTRPCRouter({
           .insert(users)
           .values({
             name: gName,
-            username: generateUsername(gName, payload.email),
+            username: await generateUsername(ctx.db, gName, payload.email),
             email: payload.email,
             profileImage: payload.picture || null,
             role: "author",
@@ -274,6 +300,19 @@ export const authRouter = createTRPCRouter({
             code: "FORBIDDEN",
             message: "Your account has been deactivated",
           });
+        }
+        // Backfill username for users who signed up before the username feature
+        if (!foundUser.username) {
+          const newUsername = await generateUsername(
+            ctx.db,
+            foundUser.name,
+            foundUser.email
+          );
+          await ctx.db
+            .update(users)
+            .set({ username: newUsername })
+            .where(eq(users.id, foundUser.id));
+          foundUser = { ...foundUser, username: newUsername };
         }
       }
 

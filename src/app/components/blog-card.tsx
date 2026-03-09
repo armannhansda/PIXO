@@ -72,15 +72,9 @@ export function BlogCard({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {post.author.username || post.author.id ? (
-                    <a
-                      href={`/profile/${post.author.username || post.author.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        router.push(
-                          `/profile/${post.author.username || post.author.id}`,
-                        );
-                      }}
+                    <Link
+                      href={`/profile/${post.author.username}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
                       {post.author.avatar ? (
@@ -110,7 +104,7 @@ export function BlogCard({
                           <span>{post.readingTime}</span>
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   ) : (
                     <>
                       {post.author.avatar ? (

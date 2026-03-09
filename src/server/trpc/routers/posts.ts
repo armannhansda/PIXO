@@ -20,6 +20,7 @@ import {
   loggerMiddleware,
   permissionMiddleware
 } from "../middlewares";
+import { rateLimitMiddleware } from "../middlewares/rateLimit";
 
 const slugInputSchema = z.object({ slug: z.string().min(1) });
 
@@ -535,6 +536,7 @@ export const postsRouter = createTRPCRouter({
 
   // Full text search across posts
   search: publicProcedure
+    .use(rateLimitMiddleware)
     .input(z.object({
       query: z.string().min(1).max(200),
       limit: z.number().int().min(1).max(50).default(12),
@@ -547,11 +549,7 @@ export const postsRouter = createTRPCRouter({
       const conditions: SQL<unknown>[] = [
         eq(posts.published, true),
         isNull(posts.deletedAt),
-        or(
-          ilike(posts.title, searchTerm),
-          ilike(posts.content, searchTerm),
-          ilike(posts.excerpt, searchTerm),
-        )!,
+       sql`posts.search_vector @@ plainto_tsquery('english', ${query})`,
       ];
 
       if (input.cursor) {

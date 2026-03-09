@@ -37,13 +37,18 @@ async function seed() {
     // ═══════════════════════════════════════════════════════
     // 1. USERS
     // ═══════════════════════════════════════════════════════
+    // Pre-hashed password for all seed users: "Password123"
+    const hashedPassword = '$2b$10$vqYw4DybyjQUAmLWPYuen.WEgt8bstgpC712YiLfWkYdaB0w.qY46';
+
     console.log('👥 Creating users...');
     const insertedUsers = await d
       .insert(users)
       .values([
         {
           name: 'Theodore Reginald',
+          username: 'theodore',
           email: 'theodore@example.com',
+          password: hashedPassword,
           role: 'admin',
           bio: 'Full-stack developer and open-source enthusiast. Writing about technology, startups, and the future of the web.',
           location: 'San Francisco, CA',
@@ -51,63 +56,81 @@ async function seed() {
         },
         {
           name: 'Elena Martinez',
+          username: 'elena',
           email: 'elena@example.com',
+          password: hashedPassword,
           bio: 'Food writer and culinary explorer. Passionate about discovering authentic flavors from every corner of the world.',
           location: 'Barcelona, Spain',
           profileImage: 'https://i.pravatar.cc/300?u=elena',
         },
         {
           name: 'James Chen',
+          username: 'james',
           email: 'james@example.com',
+          password: hashedPassword,
           bio: 'Digital nomad, photographer, and travel storyteller. Currently somewhere in Southeast Asia with a laptop and a camera.',
           location: 'Chiang Mai, Thailand',
           profileImage: 'https://i.pravatar.cc/300?u=james',
         },
         {
           name: 'Sarah Johnson',
+          username: 'sarah',
           email: 'sarah@example.com',
+          password: hashedPassword,
           bio: 'Budget travel expert and finance blogger. Proving that you don\'t need a fortune to see the world.',
           location: 'Austin, TX',
           profileImage: 'https://i.pravatar.cc/300?u=sarah',
         },
         {
           name: 'Marco Rossi',
+          username: 'marco',
           email: 'marco@example.com',
+          password: hashedPassword,
           bio: 'Mediterranean lifestyle writer and sailing enthusiast. Covering hidden gems along the European coast.',
           location: 'Naples, Italy',
           profileImage: 'https://i.pravatar.cc/300?u=marco',
         },
         {
           name: 'Priya Sharma',
+          username: 'priya',
           email: 'priya@example.com',
+          password: hashedPassword,
           bio: 'Wellness coach, yoga instructor, and mindfulness advocate. Helping people find balance in a busy world.',
           location: 'Mumbai, India',
           profileImage: 'https://i.pravatar.cc/300?u=priya',
         },
         {
           name: 'Alex Rivera',
+          username: 'alex',
           email: 'alex@example.com',
+          password: hashedPassword,
           bio: 'Sports journalist and marathon runner. Covering global athletics and the stories behind the athletes.',
           location: 'Mexico City, Mexico',
           profileImage: 'https://i.pravatar.cc/300?u=alex',
         },
         {
           name: 'Lina Nakamura',
+          username: 'lina',
           email: 'lina@example.com',
+          password: hashedPassword,
           bio: 'UX designer turned writer. Exploring the intersection of design, technology, and human behavior.',
           location: 'Tokyo, Japan',
           profileImage: 'https://i.pravatar.cc/300?u=lina',
         },
         {
           name: 'David Okafor',
+          username: 'david',
           email: 'david@example.com',
+          password: hashedPassword,
           bio: 'Environmental scientist and sustainability advocate. Writing about climate action and green innovation.',
           location: 'Lagos, Nigeria',
           profileImage: 'https://i.pravatar.cc/300?u=david',
         },
         {
           name: 'Sophie Laurent',
+          username: 'sophie',
           email: 'sophie@example.com',
+          password: hashedPassword,
           bio: 'Art critic and gallery curator. Passionate about contemporary art, street art, and emerging creative voices.',
           location: 'Paris, France',
           profileImage: 'https://i.pravatar.cc/300?u=sophie',

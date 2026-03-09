@@ -38,37 +38,40 @@ async function seed() {
     // ═══════════════════════════════════════════
     // 1. USERS
     // ═══════════════════════════════════════════
+    // Pre-hashed password for all seed users: "Password123"
+    const hashedPassword = '$2b$10$vqYw4DybyjQUAmLWPYuen.WEgt8bstgpC712YiLfWkYdaB0w.qY46';
+
     console.log('👥 Creating users...');
     const authors = await sql`
-      INSERT INTO users (name, email, role, bio, location, profile_image) VALUES
-      ('Theodore Reginald', 'theodore@example.com', 'admin',
+      INSERT INTO users (name, username, email, password, role, bio, location, profile_image) VALUES
+      ('Theodore Reginald', 'theodore', 'theodore@example.com', ${hashedPassword}, 'admin',
        'Full-stack developer and open-source enthusiast. Writing about technology, startups, and the future of the web.',
        'San Francisco, CA', 'https://i.pravatar.cc/300?u=theodore'),
-      ('Elena Martinez', 'elena@example.com', 'author',
+      ('Elena Martinez', 'elena', 'elena@example.com', ${hashedPassword}, 'author',
        'Food writer and culinary explorer. Passionate about discovering authentic flavors from every corner of the world.',
        'Barcelona, Spain', 'https://i.pravatar.cc/300?u=elena'),
-      ('James Chen', 'james@example.com', 'author',
+      ('James Chen', 'james', 'james@example.com', ${hashedPassword}, 'author',
        'Digital nomad, photographer, and travel storyteller. Currently somewhere in Southeast Asia with a laptop and a camera.',
        'Chiang Mai, Thailand', 'https://i.pravatar.cc/300?u=james'),
-      ('Sarah Johnson', 'sarah@example.com', 'author',
+      ('Sarah Johnson', 'sarah', 'sarah@example.com', ${hashedPassword}, 'author',
        'Budget travel expert and finance blogger. Proving that you don''t need a fortune to see the world.',
        'Austin, TX', 'https://i.pravatar.cc/300?u=sarah'),
-      ('Marco Rossi', 'marco@example.com', 'author',
+      ('Marco Rossi', 'marco', 'marco@example.com', ${hashedPassword}, 'author',
        'Mediterranean lifestyle writer and sailing enthusiast. Covering hidden gems along the European coast.',
        'Naples, Italy', 'https://i.pravatar.cc/300?u=marco'),
-      ('Priya Sharma', 'priya@example.com', 'author',
+      ('Priya Sharma', 'priya', 'priya@example.com', ${hashedPassword}, 'author',
        'Wellness coach, yoga instructor, and mindfulness advocate. Helping people find balance in a busy world.',
        'Mumbai, India', 'https://i.pravatar.cc/300?u=priya'),
-      ('Alex Rivera', 'alex@example.com', 'author',
+      ('Alex Rivera', 'alex', 'alex@example.com', ${hashedPassword}, 'author',
        'Sports journalist and marathon runner. Covering global athletics and the stories behind the athletes.',
        'Mexico City, Mexico', 'https://i.pravatar.cc/300?u=alex'),
-      ('Lina Nakamura', 'lina@example.com', 'author',
+      ('Lina Nakamura', 'lina', 'lina@example.com', ${hashedPassword}, 'author',
        'UX designer turned writer. Exploring the intersection of design, technology, and human behavior.',
        'Tokyo, Japan', 'https://i.pravatar.cc/300?u=lina'),
-      ('David Okafor', 'david@example.com', 'author',
+      ('David Okafor', 'david', 'david@example.com', ${hashedPassword}, 'author',
        'Environmental scientist and sustainability advocate. Writing about climate action and green innovation.',
        'Lagos, Nigeria', 'https://i.pravatar.cc/300?u=david'),
-      ('Sophie Laurent', 'sophie@example.com', 'author',
+      ('Sophie Laurent', 'sophie', 'sophie@example.com', ${hashedPassword}, 'author',
        'Art critic and gallery curator. Passionate about contemporary art, street art, and emerging creative voices.',
        'Paris, France', 'https://i.pravatar.cc/300?u=sophie')
       RETURNING id, name

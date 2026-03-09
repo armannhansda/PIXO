@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
@@ -17,6 +18,7 @@ import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
 import { TrendingSection } from "./components/trending-section";
 import type { BlogPost } from "./components/mock-data";
+import CircularLoading from "./components/circular-loading";
 
 const trendingTags = [
   "Design Systems",
@@ -31,6 +33,7 @@ const trendingTags = [
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
   const { data: postsData, isLoading } = api.posts.list.useQuery();
 
   const blogPosts = (postsData ?? []).map(mapPostToUI);
@@ -39,6 +42,13 @@ export default function HomePage() {
   const featured = blogPosts.slice(0, 3);
   const trending = blogPosts.slice(3, 6);
   const latest = blogPosts.slice(5, 11);
+
+  const handleSearch = () => {
+    const q = searchQuery.trim();
+    if (q) {
+      router.push(`/explore?q=${encodeURIComponent(q)}`);
+    }
+  };
 
   return (
     <div className="min-h-screen font-['Inter',sans-serif]">
@@ -97,12 +107,12 @@ export default function HomePage() {
 
           {/* Search Bar */}
           <motion.div
-            className="mt-8 max-w-xl mx-auto"
+            className="mt-8 max-w-xl mx-auto "
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.35 }}
           >
-            <div className="relative group">
+            <div className="relative group rounded-full">
               <Search
                 className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-accent transition-colors"
                 size={20}
@@ -112,7 +122,8 @@ export default function HomePage() {
                 placeholder="Search articles, topics, authors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-13 pr-5 py-4 bg-surface border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all shadow-sm"
+                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                className="w-full pl-13 pr-5 py-4 bg-surface border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all shadow-sm"
                 style={{ fontSize: 15 }}
               />
               {/* <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -217,9 +228,7 @@ export default function HomePage() {
               </div>
             </div>
           ) : isLoading ? (
-            <div className="text-center py-20 text-muted-foreground">
-              Loading articles...
-            </div>
+            <CircularLoading />
           ) : (
             <div className="text-center py-20 text-muted-foreground">
               No featured articles yet.

@@ -162,11 +162,6 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </button>
-
-            <button className="p-2 rounded-xl hover:bg-surface transition-colors text-muted-foreground hover:text-foreground">
-              <Search size={18} />
-            </button>
-
             {/* Notification Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

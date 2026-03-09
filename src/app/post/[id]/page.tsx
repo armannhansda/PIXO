@@ -18,6 +18,7 @@ import { motion } from "motion/react";
 import { IMAGES } from "../../components/mock-data";
 import { ContentRenderer } from "../../components/content-renderer";
 import { api } from "@/lib/trpc";
+import CircularLoading from "@/app/components/circular-loading";
 
 export default function BlogPostPage() {
   const { id } = useParams();
@@ -61,6 +62,7 @@ export default function BlogPostPage() {
       coverImage: postData.coverImage || IMAGES.tech,
       author: {
         name: postData.author?.name || "Unknown",
+        username: (postData.author as any)?.username,
         avatar: (postData.author as any)?.profileImage || "",
       },
       readingTime: `${readMin} min read`,
@@ -124,7 +126,7 @@ export default function BlogPostPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading article...</p>
+        <CircularLoading />
       </div>
     );
   }
@@ -158,14 +160,6 @@ export default function BlogPostPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
           <div className="max-w-4xl mx-auto">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
-              style={{ fontSize: 14 }}
-            >
-              <ArrowLeft size={16} />
-              Back to feed
-            </Link>
             <span
               className="inline-block px-3 py-1 bg-accent text-white rounded-full mb-4"
               style={{ fontSize: 12, fontWeight: 600 }}
@@ -212,7 +206,8 @@ export default function BlogPostPage() {
                 )}
                 <div>
                   <Link
-                    href="/profile"
+                    href={`/profile/${post.author.username}`}
+                    onClick={(e) => e.stopPropagation()}
                     style={{ fontSize: 15, fontWeight: 600 }}
                     className="hover:text-accent transition-colors"
                   >

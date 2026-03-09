@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 import { BentoGrid, EXPLORE_PATTERN } from "../components/bento-grid";
+import CircularLoading from "../components/circular-loading";
 import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
 
 export default function ExplorePage() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [activeCategory, setActiveCategory] = useState("All");
 
   const { data: postsData, isLoading: postsLoading } =
@@ -61,7 +64,7 @@ export default function ExplorePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search articles..."
-            className="w-full pl-11 pr-4 py-3 bg-surface border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-surface border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
             style={{ fontSize: 15 }}
           />
         </div>
@@ -87,7 +90,7 @@ export default function ExplorePage() {
         {/* Bento Grid */}
         {postsLoading ? (
           <div className="text-center py-20 text-muted-foreground">
-            <p style={{ fontSize: 16 }}>Loading articles...</p>
+            <CircularLoading />
           </div>
         ) : filtered.length > 0 ? (
           <BentoGrid posts={filtered} pattern={EXPLORE_PATTERN} />
