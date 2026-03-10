@@ -72,7 +72,11 @@
     "katex": "^0.16.37",
     "lucide-react": "0.487.0",
     "motion": "12.23.24",
+<<<<<<< Updated upstream
     "next": "15.5.9",
+=======
+    "next": "^16.1.6",
+>>>>>>> Stashed changes
     "next-themes": "0.4.6",
     "postcss": "^8.5.6",
     "postgres": "^3.4.7",
@@ -108,7 +112,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "4.7.0",
     "eslint": "^10.0.3",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.1.6",
     "tailwindcss": "4.1.12",
     "typescript": "^5",
     "vite": "6.3.5"
