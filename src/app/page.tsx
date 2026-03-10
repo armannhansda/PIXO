@@ -351,7 +351,7 @@ function FeaturedHeroCard({ post }: { post: BlogPost }) {
           alt={post.title}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/5" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/5" />
 
         {/* Top bar */}
         <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
@@ -459,7 +459,7 @@ function FeaturedSideCard({ post }: { post: BlogPost }) {
           alt={post.title}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/5" />
 
         {/* Category pill */}
         <div className="absolute top-4 left-4 z-10">
@@ -524,13 +524,13 @@ function LatestPostCard({ post }: { post: BlogPost }) {
     <Link href={`/post/${post.id}`} className="block group">
       <div className="rounded-2xl border border-border overflow-hidden bg-card hover:shadow-lg transition-all duration-300 h-full flex flex-col">
         {/* Image */}
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="relative aspect-16/10 overflow-hidden">
           <img
             src={post.coverImage}
             alt={post.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
           {/* Category pill */}
           <div className="absolute top-3 left-3">
             <span

@@ -110,7 +110,7 @@ export default function LoginPage() {
           alt="Abstract gradient"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/80 via-accent/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-br from-accent/80 via-accent/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-end p-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

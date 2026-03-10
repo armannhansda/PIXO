@@ -45,7 +45,7 @@ export function BlogCard({
       >
         <Link href={`/post/${post.id}`} className="block group">
           <div className="grid md:grid-cols-2 gap-6 bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
-            <div className="aspect-[16/10] md:aspect-auto overflow-hidden">
+            <div className="aspect-16/10 md:aspect-auto overflow-hidden">
               <Image
                 src={optimizeImage(post.coverImage)}
                 alt={post.title}
@@ -200,7 +200,7 @@ export function BlogCard({
               </button>
             </div>
           )}
-          <div className="aspect-[16/10] overflow-hidden">
+          <div className="aspect-16/10 overflow-hidden">
             <img
               src={post.coverImage}
               alt={post.title}
