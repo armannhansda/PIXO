@@ -25,7 +25,7 @@ export function useTheme() {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("WriteNest-theme") as Theme;
+      const saved = localStorage.getItem("PIXO-theme") as Theme;
       if (saved) return saved;
       return window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
@@ -41,7 +41,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("WriteNest-theme", theme);
+    localStorage.setItem("PIXO-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

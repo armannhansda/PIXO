@@ -129,7 +129,7 @@ export default function LoginPage() {
               className="text-white/80 max-w-sm"
               style={{ fontSize: 16, lineHeight: 1.6 }}
             >
-              Join thousands of writers and thinkers sharing ideas on WriteNest.
+              Join thousands of writers and thinkers sharing ideas on PIXO.
             </p>
           </motion.div>
         </div>
@@ -145,15 +145,7 @@ export default function LoginPage() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-10">
-            <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-              <span
-                className="text-white"
-                style={{ fontSize: 18, fontWeight: 700 }}
-              >
-                B
-              </span>
-            </div>
-            <span style={{ fontSize: 24, fontWeight: 700 }}>WriteNest</span>
+            <span style={{ fontSize: 24, fontWeight: 700 }}>PIXO</span>
           </Link>
 
           <h1 className="mb-2" style={{ fontSize: 28, fontWeight: 700 }}>
@@ -166,11 +158,11 @@ export default function LoginPage() {
           </p>
 
           {/* Google Button (rendered by Google Identity Services) */}
-          <div ref={googleBtnRef} className="w-full mb-6 flex justify-center" />
+          <div ref={googleBtnRef} className="w-full mb-6 flex justify-center rounded-full" />
 
           {googleLoginMutation.isPending && (
             <div
-              className="flex items-center justify-center gap-2 mb-4 text-muted-foreground"
+              className="flex items-center justify-center gap-2 mb-4 text-muted-foreground rounded-full"
               style={{ fontSize: 14 }}
             >
               <Loader2 size={16} className="animate-spin" />

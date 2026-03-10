@@ -5,7 +5,7 @@ import { TRPCProvider } from "@/lib/trpc/provider";
 import { LayoutShell } from "./components/layout-shell";
 
 export const metadata: Metadata = {
-  title: "WriteNest",
+  title: "PIXO",
   description: "A modern blogging platform",
 };
 

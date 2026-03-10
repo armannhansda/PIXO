@@ -33,7 +33,7 @@ export function Footer() {
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent text-white">
                 <PenSquare size={16} />
               </div>
-              <span style={{ fontSize: 18, fontWeight: 700 }}>WriteNest</span>
+              <span style={{ fontSize: 18, fontWeight: 700 }}>PIXO</span>
             </Link>
             <p
               className="text-muted-foreground mb-5 max-w-[240px]"
@@ -94,7 +94,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-muted-foreground" style={{ fontSize: 13 }}>
-            &copy; {new Date().getFullYear()} WriteNest. All rights reserved.
+            &copy; {new Date().getFullYear()} PIXO. All rights reserved.
           </p>
           <p
             className="flex items-center gap-1 text-muted-foreground"

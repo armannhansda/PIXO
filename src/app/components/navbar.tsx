@@ -95,19 +95,10 @@ export function Navbar() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-              <span
-                className="text-white"
-                style={{ fontSize: 14, fontWeight: 700 }}
-              >
-                B
-              </span>
-            </div>
             <span
-              className="hidden sm:block"
               style={{ fontSize: 20, fontWeight: 700 }}
             >
-              WriteNest
+              PIXO
             </span>
           </Link>
 
@@ -238,7 +229,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-full hover:bg-accent/90 transition-colors"
                 style={{ fontSize: 13, fontWeight: 600 }}
               >
                 <LogIn size={14} />

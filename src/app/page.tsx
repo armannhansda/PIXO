@@ -75,7 +75,7 @@ export default function HomePage() {
             style={{ fontSize: 13, fontWeight: 600 }}
           >
             <Sparkles size={14} />
-            Welcome to WriteNest
+            Welcome to PIXO
           </motion.div>
 
           <motion.h1
@@ -122,7 +122,9 @@ export default function HomePage() {
                 placeholder="Search articles, topics, authors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
                 className="w-full pl-13 pr-5 py-4 bg-surface border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all shadow-sm"
                 style={{ fontSize: 15 }}
               />

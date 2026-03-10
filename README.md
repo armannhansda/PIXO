@@ -1,4 +1,4 @@
-# WriteNest — Modern Blogging Platform
+# PIXO — Modern Blogging Platform
 
 A full-featured blogging platform built with **Next.js 15**, **TypeScript**, **tRPC**, **Drizzle ORM**, and **PostgreSQL**. Create, share, and discover stories with a beautiful, responsive UI.
 
@@ -81,7 +81,7 @@ A full-featured blogging platform built with **Next.js 15**, **TypeScript**, **t
 ## Project Structure
 
 ```
-WriteNest/
+PIXO/
 ├── public/                     # Static assets
 ├── scripts/
 │   ├── migrate.js              # Database migration runner
@@ -169,7 +169,7 @@ WriteNest/
 
 ```bash
 git clone <your-repo-url>
-cd WriteNest
+cd PIXO
 ```
 
 ### 2. Install dependencies
