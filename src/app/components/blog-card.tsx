@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import type { BlogPost } from "./mock-data.ts";
 import Image from "next/image.js";
-import { optimizeImage } from "@/lib/cloudinary.js";
+import { optimizeImage } from "@/lib/cloudinary";
 
 interface BlogCardProps {
   post: BlogPost;

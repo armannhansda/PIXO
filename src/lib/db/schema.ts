@@ -1,6 +1,12 @@
 // lib/db/schema.ts
-import { pgTable, text, serial, timestamp, boolean, varchar, integer, primaryKey, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, serial, timestamp, boolean, varchar, integer, primaryKey, index,customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 // ─── Users ───────────────────────────────────────────────
 export const users = pgTable('users', {
@@ -29,6 +35,7 @@ export const posts = pgTable('posts', {
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   content: text('content').notNull(),
   excerpt: text('excerpt'),
+   searchVector: tsvector('search_vector'),
   coverImage: text('cover_image'),
   published: boolean('published').default(false),
   authorId: integer('author_id').references(() => users.id),
@@ -36,9 +43,9 @@ export const posts = pgTable('posts', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
-  authorIdx: index('posts_author_id_idx').on(table.authorId),
-  createdAtIdx: index('posts_created_at_idx').on(table.createdAt),
-  publishedIdx: index('posts_published_idx').on(table.published),
+   authorIdx: index("idx_posts_author_id").on(table.authorId),
+    createdIdx: index("idx_posts_created_at").on(table.createdAt),
+    publishedIdx: index("idx_posts_published").on(table.published),
 }));
 
 // ─── Categories ──────────────────────────────────────────
@@ -107,7 +114,8 @@ export const likes = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.postId] }),
-    postIdx: index('likes_post_id_idx').on(table.postId),
+     userIdx: index("idx_likes_user_id").on(table.userId),
+    postIdx: index('idx_likes_post_id').on(table.postId),
   }),
 );
 
@@ -125,7 +133,7 @@ export const bookmarks = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.postId] }),
-    userIdx: index('bookmarks_user_id_idx').on(table.userId),
+    userIdx: index('idx_bookmarks_user_id').on(table.userId),
   }),
 );
 
@@ -144,9 +152,9 @@ export const comments = pgTable('comments', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
-  postIdx: index('comments_post_id_idx').on(table.postId),
-  authorIdx: index('comments_author_id_idx').on(table.authorId),
   parentIdx: index('comments_parent_id_idx').on(table.parentId),
+  postIdx: index("idx_comments_post_id").on(table.postId),
+  authorIdx: index("idx_comments_user_id").on(table.authorId),
 }));
 
 // ─── Followers ───────────────────────────────────────────
@@ -163,8 +171,8 @@ export const followers = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.followerId, table.followingId] }),
-    followerIdx: index('followers_follower_id_idx').on(table.followerId),
-    followingIdx: index('followers_following_id_idx').on(table.followingId),
+    followerIdx: index('idx_followers_user_id').on(table.followerId),
+    followingIdx: index('idx_followers_following_id').on(table.followingId),
   }),
 );
 

@@ -85,17 +85,11 @@ export default function ProfilePage() {
     [userPostsData],
   );
   const savedPosts = useMemo(
-    () =>
-      (savedPostsData?.items ?? savedPostsData ?? []).map((b: any) =>
-        mapPostToUI(b.post ?? b),
-      ),
+    () => (savedPostsData?.items ?? []).map((b: any) => mapPostToUI(b)),
     [savedPostsData],
   );
   const likedPosts = useMemo(
-    () =>
-      (likedPostsData?.items ?? likedPostsData ?? []).map((p: any) =>
-        mapPostToUI(p),
-      ),
+    () => (likedPostsData?.items ?? []).map((p: any) => mapPostToUI(p)),
     [likedPostsData],
   );
 

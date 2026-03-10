@@ -8,7 +8,7 @@ CREATE INDEX idx_posts_search
 ON posts
 USING GIN (search_vector);
 
-CREATE FUNCTION posts_search_triger() RETURNS trigger AS $$
+CREATE FUNCTION posts_search_trigger() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector := to_tsvector
   ('english', coalesce(NEW.title, '') || ' ' || coalesce(NEW.content, '') || ' ' || coalesce(NEW.excerpt, ''));
