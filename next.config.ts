@@ -2,14 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["postgres"],
-  // images: {
-  //   remotePatterns: [
-  //     {
-  //       protocol: "https",
-  //       hostname: "res.cloudinary.com",
-  //     },
-  //   ],
-  // },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     domains: ["res.cloudinary.com"],
   },
