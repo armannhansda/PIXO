@@ -83,7 +83,7 @@ export function Navbar() {
       <motion.nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "top-3 mx-4 md:mx-8 rounded-2xl bg-background/80 backdrop-blur-xl border border-border shadow-lg"
+            ? "top-3 mx-4 md:mx-8 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-lg"
             : "bg-transparent"
         }`}
         initial={{ y: -100 }}

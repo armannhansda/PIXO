@@ -158,7 +158,10 @@ export default function LoginPage() {
           </p>
 
           {/* Google Button (rendered by Google Identity Services) */}
-          <div ref={googleBtnRef} className="w-full mb-6 flex justify-center rounded-full" />
+          <div
+            ref={googleBtnRef}
+            className="w-full mb-6 flex justify-center rounded-full"
+          />
 
           {googleLoginMutation.isPending && (
             <div
