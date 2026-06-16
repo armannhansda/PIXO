@@ -1,330 +1,260 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  Search,
-  PenSquare,
-  Bell,
-  Home,
-  Compass,
-  Menu,
-  X,
-  Sun,
-  Moon,
-  LogIn,
-  LogOut,
-  User,
-  Settings,
-  BookMarked,
-  Heart,
-  BellRing,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useTheme } from "@/lib/theme/ThemeProvider";
+import { useRouter } from "next/navigation";
+import { User, Moon, Sun } from "lucide-react";
 import { api } from "@/lib/trpc";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+import { useTheme } from "@/lib/theme/ThemeProvider";
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-
-  // Check if user has a token before querying
-  const [hasToken, setHasToken] = useState(false);
-  useEffect(() => {
-    setHasToken(!!localStorage.getItem("authToken"));
-  }, [pathname]);
-
-  const { data: user } = api.auth.me.useQuery(undefined, {
-    enabled: hasToken,
-    retry: false,
-  });
-
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    setHasToken(false);
-    router.push("/");
-    // Force refetch to clear cached user
-    window.location.reload();
+  const goTo = (path: string) => {
+    setMobileOpen(false);
+    router.push(path);
   };
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    // Distraction-Free Reading (Hide on scroll down)
+    const mainNav = document.getElementById("mainNav");
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > 50) {
+        mainNav?.classList.add("scrolled");
+      } else {
+        mainNav?.classList.remove("scrolled");
+      }
+
+      // Hide navbar when scrolling down past 200px, show when scrolling up
+      if (currentScrollY > 200 && currentScrollY > lastScrollY) {
+        mainNav?.style.setProperty("transform", "translateY(-100%)");
+      } else {
+        mainNav?.style.setProperty("transform", "translateY(0)");
+      }
+      
+      lastScrollY = currentScrollY;
+    };
+    
+    // Add smooth transition for the transform
+    if (mainNav) {
+      mainNav.style.transition = "transform 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease";
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Initial check
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const { data: me } = api.auth.me.useQuery(undefined, {
+    retry: false,
+  });
+  const writeHref = me ? "/write" : "/login?callbackUrl=%2Fwrite";
+  const accountHref = me ? "/profile" : "/login?callbackUrl=%2Fprofile";
 
-  const isActive = (path: string) => pathname === path;
+  const logoutMutation = api.auth.logout.useMutation();
 
-  const navLinks = [
-    { path: "/", label: "Home", icon: Home },
-    { path: "/explore", label: "Explore", icon: Compass },
-    { path: "/write", label: "Write", icon: PenSquare },
-  ];
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSettled: () => {
+        localStorage.removeItem("authToken");
+        router.push("/");
+        router.refresh();
+      },
+    });
+  };
+
+  // Search Overlay Trigger (Step 10)
+  const handleSearchToggle = () => {
+    const searchOverlay = document.getElementById("searchOverlay");
+    const searchInput = document.getElementById("searchInput") as HTMLInputElement;
+    if (searchOverlay) {
+      searchOverlay.classList.remove("hidden");
+      setTimeout(() => {
+        searchInput?.focus();
+      }, 100);
+    }
+  };
 
   return (
     <>
-      <motion.nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "top-3 mx-4 md:mx-8 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-lg"
-            : "bg-transparent"
-        }`}
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.4 }}
+      {/* Navigation Bar (Step 3.1 & 3.2) */}
+      <nav
+        className="nav-glass fixed top-0 left-0 w-full z-[1000]"
+        id="mainNav"
+        role="navigation"
+        aria-label="Main navigation"
       >
-        <div
-          className={`max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between ${scrolled ? "h-14" : "h-16"}`}
-        >
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span
-              style={{ fontSize: 20, fontWeight: 700 }}
-            >
-              PIXO
-            </span>
+          <Link
+            href="/"
+            className="font-heading text-2xl font-bold tracking-tight"
+            style={{ color: "var(--accent)" }}
+          >
+            PIXO<span style={{ color: "var(--fg)" }}>.</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                href={link.path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                  isActive(link.path)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-surface"
-                }`}
-                style={{ fontSize: 14, fontWeight: 500 }}
-              >
-                <link.icon size={16} />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="relative p-2 rounded-xl hover:bg-surface transition-colors text-muted-foreground hover:text-foreground overflow-hidden"
-              aria-label="Toggle theme"
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {theme === "light" ? (
-                  <motion.div
-                    key="sun"
-                    initial={{ y: -20, opacity: 0, rotate: -90 }}
-                    animate={{ y: 0, opacity: 1, rotate: 0 }}
-                    exit={{ y: 20, opacity: 0, rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Moon size={18} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="moon"
-                    initial={{ y: -20, opacity: 0, rotate: 90 }}
-                    animate={{ y: 0, opacity: 1, rotate: 0 }}
-                    exit={{ y: 20, opacity: 0, rotate: -90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Sun size={18} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center gap-8">
+            <button onClick={() => router.push("/#hero")} className="hover:text-[var(--accent)] transition-colors">
+              Home
             </button>
-            {/* Notification Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-xl hover:bg-surface transition-colors text-muted-foreground hover:text-foreground">
-                  <Bell size={18} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <BellRing size={14} />
-                  Notifications
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <div className="py-4 text-center text-sm text-muted-foreground">
-                  No new notifications
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Profile Dropdown */}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="hidden md:block rounded-full focus:outline-none">
-                    {user.profileImage ? (
-                      <img
-                        src={user.profileImage}
-                        alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent hover:ring-accent transition-all"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center ring-2 ring-transparent hover:ring-accent transition-all">
-                        <span className="text-white text-sm font-semibold">
-                          {user.name?.charAt(0)?.toUpperCase() || "U"}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push("/profile")}>
-                      <User size={14} />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/profile")}>
-                      <BookMarked size={14} />
-                      Saved Posts
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/profile")}>
-                      <Heart size={14} />
-                      Liked Posts
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={handleLogout}
-                  >
-                    <LogOut size={14} />
-                    Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link
-                href="/login"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-full hover:bg-accent/90 transition-colors"
-                style={{ fontSize: 13, fontWeight: 600 }}
-              >
-                <LogIn size={14} />
-                Sign In
-              </Link>
-            )}
-            <button
-              className="md:hidden p-2 rounded-xl hover:bg-surface transition-colors"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            <button onClick={() => router.push("/explore")} className="hover:text-[var(--accent)] transition-colors">
+              Explore
+            </button>
+            <button onClick={() => router.push("/#categories")} className="hover:text-[var(--accent)] transition-colors">
+              Categories
+            </button>
+            <button onClick={() => router.push("/#newsletter")} className="hover:text-[var(--accent)] transition-colors">
+              Newsletter
             </button>
           </div>
-        </div>
-      </motion.nav>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            className="fixed inset-0 z-40 bg-background pt-20 px-6"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  href={link.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive(link.path)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-surface"
-                  }`}
-                  style={{ fontSize: 16, fontWeight: 500 }}
-                >
-                  <link.icon size={20} />
-                  {link.label}
-                </Link>
-              ))}
+          {/* Right Actions */}
+          <div className="hidden md:flex items-center gap-6">
+            <button
+              id="searchToggle"
+              onClick={handleSearchToggle}
+              className="text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              aria-label="Search"
+            >
+              <i className="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <button
+              onClick={() => goTo(writeHref)}
+              className="btn-accent px-5 py-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 flex items-center gap-2 font-medium"
+            >
+              Write <i className="fa-solid fa-pen-nib text-xs"></i>
+            </button>
+
+            {me ? (
               <Link
-                href="/profile"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-surface"
-                style={{ fontSize: 16, fontWeight: 500 }}
+                href={accountHref}
+                className="flex items-center justify-center w-10 h-10 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                aria-label="Go to profile"
               >
-                {user?.profileImage ? (
+                {me.profileImage ? (
                   <img
-                    src={user.profileImage}
-                    alt="Profile"
-                    className="w-6 h-6 rounded-full object-cover"
+                    src={me.profileImage}
+                    alt={me.name}
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-                    <span className="text-white text-xs font-semibold">
-                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                    </span>
-                  </div>
+                  <User size={18} />
                 )}
-                Profile
               </Link>
-
-              {user ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-surface w-full text-left"
-                  style={{ fontSize: 16, fontWeight: 500 }}
-                >
-                  <LogOut size={20} />
-                  Log Out
-                </button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-surface"
-                  style={{ fontSize: 16, fontWeight: 500 }}
-                >
-                  <LogIn size={20} />
-                  Sign In
-                </Link>
-              )}
-
-              {/* Mobile Theme Toggle */}
+            ) : (
               <button
-                onClick={toggleTheme}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-surface"
-                style={{ fontSize: 16, fontWeight: 500 }}
+                onClick={() => goTo("/login")}
+                className="text-sm font-heading font-bold text-[var(--fg)] hover:text-[var(--accent)] transition-colors pl-2 border-l border-[var(--border)]"
               >
-                {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-                {theme === "light" ? "Night Mode" : "Light Mode"}
+                Log In
               </button>
-            </div>
-          </motion.div>
+            )}
+          </div>
+
+          {/* Mobile Hamburger */}
+          <button
+            id="mobileToggle"
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+            aria-label="Open menu"
+          >
+            <i className="fa-solid fa-bars text-[var(--fg)]"></i>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Hamburger Menu Overlay (Step 3.4) */}
+      <div
+        id="mobileMenu"
+        className={`mobile-menu fixed inset-0 z-[1001] bg-[rgba(10,10,10,0.98)] flex flex-col items-center justify-center gap-8 md:hidden ${
+          mobileOpen ? "open" : ""
+        }`}
+      >
+        <button
+          id="mobileClose"
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-6 right-6 text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+          aria-label="Close menu"
+        >
+          <i className="fa-solid fa-xmark text-2xl"></i>
+        </button>
+        
+        <button
+          onClick={() => goTo("/#hero")}
+          className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+        >
+          Home
+        </button>
+        <button
+          onClick={() => goTo("/explore")}
+          className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+        >
+          Explore
+        </button>
+        <button
+          onClick={() => goTo("/#categories")}
+          className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+        >
+          Categories
+        </button>
+        <button
+          onClick={() => goTo("/#newsletter")}
+          className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+        >
+          Newsletter
+        </button>
+        <button
+          onClick={() => goTo(writeHref)}
+          className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors flex items-center gap-2"
+        >
+          Write <i className="fa-solid fa-pen-nib text-sm"></i>
+        </button>
+
+        {me ? (
+          <>
+            <button
+              onClick={() => goTo("/dashboard")}
+              className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => goTo("/profile")}
+              className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+            >
+              Profile ({me.name})
+            </button>
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                handleLogout();
+              }}
+              className="mobile-link text-2xl font-heading text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+            >
+              Log Out
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => goTo("/login")}
+            className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors"
+          >
+            Log In
+          </button>
         )}
-      </AnimatePresence>
+      </div>
     </>
   );
 }

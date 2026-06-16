@@ -7,14 +7,7 @@ import superjson from "superjson";
 
 import { api } from "./react";
 
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem("authToken");
-  } catch {
-    return null;
-  }
-}
+
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -34,12 +27,16 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: "/api/trpc",
           transformer: superjson,
-          async headers() {
-            const token = getAuthToken();
+          headers() {
             return {
-              ...(token && { Authorization: `Bearer ${token}` }),
               "x-trpc-source": "react",
             };
+          },
+          fetch: (url, options) => {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
           },
         }),
       ],

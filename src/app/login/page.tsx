@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "@/lib/trpc";
 import { IMAGES } from "../components/mock-data";
+import { toast } from "react-hot-toast";
 
 declare global {
   interface Window {
@@ -16,7 +17,7 @@ declare global {
           initialize: (config: Record<string, unknown>) => void;
           renderButton: (
             el: HTMLElement,
-            config: Record<string, unknown>,
+            config: Record<string, unknown>
           ) => void;
         };
       };
@@ -35,30 +36,32 @@ export default function LoginPage() {
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
   const loginMutation = api.auth.login.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("authToken", data.token);
-      router.push("/");
+    onSuccess: () => {
+      localStorage.setItem("authToken", "true");
+      router.push("/dashboard");
+      router.refresh();
     },
     onError: (err) => setError(err.message),
   });
 
   const signupMutation = api.auth.signup.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("authToken", data.token);
-      router.push("/");
+    onSuccess: () => {
+      localStorage.setItem("authToken", "true");
+      router.push("/dashboard");
+      router.refresh();
     },
     onError: (err) => setError(err.message),
   });
 
   const googleLoginMutation = api.auth.googleLogin.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("authToken", data.token);
-      router.push("/");
+    onSuccess: () => {
+      localStorage.setItem("authToken", "true");
+      router.push("/dashboard");
+      router.refresh();
     },
     onError: (err) => setError(err.message),
   });
 
-  // Load Google Identity Services script and render sign-in button
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) return;
@@ -102,70 +105,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex font-['Inter',sans-serif] bg-background transition-colors duration-300">
-      {/* Left - Gradient/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <img
-          src={IMAGES.gradient}
-          alt="Abstract gradient"
-          className="w-full h-full object-cover"
+    <div className="min-h-screen flex font-body bg-bg text-fg transition-colors duration-300">
+      {/* Form Container */}
+      <div className="w-full min-h-screen flex flex-col items-center justify-center p-6 md:p-12 bg-bg relative">
+        {/* Back Button */}
+        <Link 
+          href="/" 
+          className="absolute top-8 left-8 flex items-center gap-2 text-[var(--muted)] hover:text-[var(--accent)] transition-colors font-heading text-sm font-medium z-20"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </Link>
+        {/* Ambient Glows */}
+        <div
+          className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full pointer-events-none opacity-20"
+          style={{
+            background: "radial-gradient(circle, rgba(232,160,35,0.08) 0%, transparent 70%)",
+          }}
         />
-        <div className="absolute inset-0 bg-linear-to-br from-accent/80 via-accent/40 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-end p-12">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            <h2
-              className="text-white mb-3"
-              style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}
-            >
-              Share your story
-              <br />
-              with the world.
-            </h2>
-            <p
-              className="text-white/80 max-w-sm"
-              style={{ fontSize: 16, lineHeight: 1.6 }}
-            >
-              Join thousands of writers and thinkers sharing ideas on PIXO.
-            </p>
-          </motion.div>
-        </div>
-      </div>
 
-      {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
         <motion.div
-          className="w-full max-w-md"
+          className="w-full max-w-md relative z-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 mb-10">
-            <span style={{ fontSize: 24, fontWeight: 700 }}>PIXO</span>
+          <Link href="/" className="flex items-center gap-2 mb-8 font-heading text-2xl font-bold" style={{ color: "var(--accent)" }}>
+            PIXO<span style={{ color: "var(--fg)" }}>.</span>
           </Link>
 
-          <h1 className="mb-2" style={{ fontSize: 28, fontWeight: 700 }}>
+          <h1 className="mb-2 font-heading text-3xl font-bold" style={{ color: "var(--fg)" }}>
             {isLogin ? "Welcome back" : "Create an account"}
           </h1>
-          <p className="text-muted-foreground mb-8" style={{ fontSize: 15 }}>
+          <p className="text-[var(--muted)] mb-8" style={{ fontSize: 15 }}>
             {isLogin
               ? "Enter your credentials to access your account."
               : "Fill in the details to get started."}
           </p>
 
-          {/* Google Button (rendered by Google Identity Services) */}
+          {/* Google Button */}
           <div
             ref={googleBtnRef}
-            className="w-full mb-6 flex justify-center rounded-full"
+            className="w-full mb-6 flex justify-center rounded-xl bg-white text-black overflow-hidden"
           />
 
           {googleLoginMutation.isPending && (
             <div
-              className="flex items-center justify-center gap-2 mb-4 text-muted-foreground rounded-full"
+              className="flex items-center justify-center gap-2 mb-4 text-[var(--muted)]"
               style={{ fontSize: 14 }}
             >
               <Loader2 size={16} className="animate-spin" />
@@ -174,11 +161,11 @@ export default function LoginPage() {
           )}
 
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+            <div className="flex-1 h-px bg-[var(--border)]" />
+            <span className="text-[var(--muted)]" style={{ fontSize: 12 }}>
               or
             </span>
-            <div className="flex-1 h-px bg-border" />
+            <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
 
           {/* Form */}
@@ -194,18 +181,19 @@ export default function LoginPage() {
             {!isLogin && (
               <div>
                 <label
-                  className="block mb-1.5"
-                  style={{ fontSize: 13, fontWeight: 600 }}
+                  className="block mb-1.5 font-heading font-semibold"
+                  style={{ fontSize: 13, color: "var(--fg)" }}
                 >
                   Full Name
                 </label>
                 <div className="relative">
                   <input
                     type="text"
+                    required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="John Doe"
-                    className="w-full pl-4 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                    className="w-full pl-4 pr-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                     style={{ fontSize: 14 }}
                   />
                 </div>
@@ -214,22 +202,20 @@ export default function LoginPage() {
 
             <div>
               <label
-                className="block mb-1.5"
-                style={{ fontSize: 13, fontWeight: 600 }}
+                className="block mb-1.5 font-heading font-semibold"
+                style={{ fontSize: 13, color: "var(--fg)" }}
               >
-                Email
+                Email Address
               </label>
               <div className="relative">
-                <Mail
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  size={16}
-                />
+                <i className="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]"></i>
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                   style={{ fontSize: 14 }}
                 />
               </div>
@@ -237,13 +223,14 @@ export default function LoginPage() {
 
             <div>
               <div className="flex justify-between mb-1.5">
-                <label style={{ fontSize: 13, fontWeight: 600 }}>
+                <label className="font-heading font-semibold" style={{ fontSize: 13, color: "var(--fg)" }}>
                   Password
                 </label>
                 {isLogin && (
                   <button
                     type="button"
-                    className="text-accent hover:text-accent/80"
+                    onClick={() => toast.error("Password recovery is currently disabled.")}
+                    className="text-[var(--accent)] hover:text-[var(--fg)] font-heading transition-colors"
                     style={{ fontSize: 13, fontWeight: 500 }}
                   >
                     Forgot password?
@@ -251,24 +238,26 @@ export default function LoginPage() {
                 )}
               </div>
               <div className="relative">
-                <Lock
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  size={16}
-                />
+                <i className="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]"></i>
                 <input
                   type={showPassword ? "text" : "password"}
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-11 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                  className="w-full pl-10 pr-11 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                   style={{ fontSize: 14 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--fg)] cursor-pointer"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? (
+                    <i className="fa-solid fa-eye-slash text-sm"></i>
+                  ) : (
+                    <i className="fa-solid fa-eye text-sm"></i>
+                  )}
                 </button>
               </div>
             </div>
@@ -276,8 +265,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors mt-2 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ fontSize: 15, fontWeight: 600 }}
+              className="w-full py-3 bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] rounded-xl transition-all duration-300 mt-4 disabled:opacity-50 flex items-center justify-center gap-2 font-heading font-bold text-sm cursor-pointer"
             >
               {isLoading && <Loader2 size={16} className="animate-spin" />}
               {isLogin ? "Log In" : "Create Account"}
@@ -285,7 +273,7 @@ export default function LoginPage() {
           </form>
 
           <p
-            className="text-center mt-6 text-muted-foreground"
+            className="text-center mt-6 text-[var(--muted)]"
             style={{ fontSize: 14 }}
           >
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
@@ -294,7 +282,7 @@ export default function LoginPage() {
                 setIsLogin(!isLogin);
                 setError("");
               }}
-              className="text-accent hover:text-accent/80"
+              className="text-[var(--accent)] hover:text-[var(--fg)] font-heading transition-colors"
               style={{ fontWeight: 600 }}
             >
               {isLogin ? "Create account" : "Log in"}

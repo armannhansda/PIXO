@@ -117,9 +117,9 @@ export function EditProfileModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--bg)] border border-[var(--border)] text-[var(--fg)] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-heading font-bold text-[var(--fg)]">
             Edit Profile
           </DialogTitle>
         </DialogHeader>
@@ -127,11 +127,11 @@ export function EditProfileModal({
         <div className="space-y-5 mt-2">
           {/* Cover Image */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">
+            <Label className="text-sm font-heading font-semibold mb-2 block text-[var(--fg)]">
               Cover Image
             </Label>
             <div
-              className="relative h-32 rounded-xl overflow-hidden bg-muted border border-border cursor-pointer group"
+              className="relative h-32 rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] cursor-pointer group"
               onClick={() => coverInputRef.current?.click()}
             >
               {coverImage ? (
@@ -141,7 +141,7 @@ export function EditProfileModal({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-sm font-body">
                   Click to upload cover image
                 </div>
               )}
@@ -176,12 +176,12 @@ export function EditProfileModal({
 
           {/* Profile Image */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">
+            <Label className="text-sm font-heading font-semibold mb-2 block text-[var(--fg)]">
               Profile Image
             </Label>
             <div className="flex items-center gap-4">
               <div
-                className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border border-border cursor-pointer group shrink-0"
+                className="relative w-20 h-20 rounded-full overflow-hidden bg-[var(--surface)] border border-[var(--border)] cursor-pointer group shrink-0"
                 onClick={() => profileInputRef.current?.click()}
               >
                 {profileImage ? (
@@ -191,7 +191,7 @@ export function EditProfileModal({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-accent text-white text-2xl font-bold">
+                  <div className="w-full h-full flex items-center justify-center bg-[var(--accent)] text-[#0a0a0a] text-2xl font-heading font-bold">
                     {name?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                 )}
@@ -206,7 +206,7 @@ export function EditProfileModal({
               {profileImage && (
                 <button
                   type="button"
-                  className="text-sm text-red-500 hover:text-red-600"
+                  className="text-sm text-red-500 hover:text-red-600 font-heading font-semibold cursor-pointer"
                   onClick={() => setProfileImage("")}
                 >
                   Remove
@@ -226,7 +226,7 @@ export function EditProfileModal({
           <div>
             <Label
               htmlFor="edit-name"
-              className="text-sm font-medium mb-1.5 block"
+              className="text-sm font-heading font-semibold mb-1.5 block text-[var(--fg)]"
             >
               Name
             </Label>
@@ -235,7 +235,7 @@ export function EditProfileModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] text-sm font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
               placeholder="Your name"
             />
           </div>
@@ -244,7 +244,7 @@ export function EditProfileModal({
           <div>
             <Label
               htmlFor="edit-username"
-              className="text-sm font-medium mb-1.5 block"
+              className="text-sm font-heading font-semibold mb-1.5 block text-[var(--fg)]"
             >
               Username
             </Label>
@@ -253,7 +253,7 @@ export function EditProfileModal({
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] text-sm font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
               placeholder="@username"
             />
           </div>
@@ -262,7 +262,7 @@ export function EditProfileModal({
           <div>
             <Label
               htmlFor="edit-bio"
-              className="text-sm font-medium mb-1.5 block"
+              className="text-sm font-heading font-semibold mb-1.5 block text-[var(--fg)]"
             >
               Bio
             </Label>
@@ -271,7 +271,7 @@ export function EditProfileModal({
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] text-sm font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all resize-none"
               placeholder="Tell us about yourself"
             />
           </div>
@@ -280,7 +280,7 @@ export function EditProfileModal({
           <div>
             <Label
               htmlFor="edit-location"
-              className="text-sm font-medium mb-1.5 block"
+              className="text-sm font-heading font-semibold mb-1.5 block text-[var(--fg)]"
             >
               Location
             </Label>
@@ -289,7 +289,7 @@ export function EditProfileModal({
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] text-sm font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
               placeholder="City, Country"
             />
           </div>
@@ -297,8 +297,8 @@ export function EditProfileModal({
           {/* Show/Hide Profile Toggle */}
           <div className="flex items-center justify-between py-1">
             <div>
-              <Label className="text-sm font-medium">Public Profile</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <Label className="text-sm font-heading font-semibold text-[var(--fg)]">Public Profile</Label>
+              <p className="text-xs text-[var(--muted)] mt-0.5 font-body">
                 {isPublic
                   ? "Your profile is visible to everyone"
                   : "Your profile is hidden from others"}
@@ -308,14 +308,14 @@ export function EditProfileModal({
           </div>
 
           {/* Error */}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-500 font-body">{error}</p>}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex-1 py-2.5 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors"
+              className="flex-1 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] text-sm font-heading font-bold hover:bg-[var(--border)] transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -323,7 +323,7 @@ export function EditProfileModal({
               type="button"
               onClick={handleSave}
               disabled={saving || isUploading}
-              className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl bg-[var(--accent)] text-[#0a0a0a] text-sm font-heading font-bold hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {saving ? (
                 <>

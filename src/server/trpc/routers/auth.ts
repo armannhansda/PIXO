@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
+import { cookies } from "next/headers";
 
 import { users } from "@/lib/db/schema";
 import { generateToken } from "@/lib/auth-utils";
@@ -123,10 +124,18 @@ export const authRouter = createTRPCRouter({
         roles: ["author"],
       });
 
+      const cookieStore = await cookies();
+      cookieStore.set("session-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+
       return {
         success: true,
         user: userResponse,
-        token,
         message: "Account created successfully",
       };
     } catch (error) {
@@ -177,10 +186,18 @@ export const authRouter = createTRPCRouter({
           roles: ["author"],
         });
 
+        const cookieStore = await cookies();
+        cookieStore.set("session-token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+        });
+
         return {
           success: true,
           user: userResponse,
-          token,
           message: "Login successful",
         };
       }
@@ -207,10 +224,18 @@ export const authRouter = createTRPCRouter({
         roles: ["author"],
       });
 
+      const cookieStore = await cookies();
+      cookieStore.set("session-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+
       return {
         success: true,
         user: userResponse,
-        token,
         message: "Login successful",
       };
     } catch (error) {
@@ -227,14 +252,14 @@ export const authRouter = createTRPCRouter({
   }),
 
   // logout mutation
-  // logout: publicProcedure.mutation(({ ctx }) => {
-  //   ctx.res.cookies.set("session-token", "", {
-  //   maxAge: 0,
-  //   path: "/"
-  // });
-
-  // return { success: true };
-  // });
+  logout: publicProcedure.mutation(async () => {
+    const cookieStore = await cookies();
+    cookieStore.set("session-token", "", {
+      maxAge: 0,
+      path: "/",
+    });
+    return { success: true };
+  }),
 
   // Get current authenticated user
   me: publicProcedure
@@ -325,10 +350,18 @@ export const authRouter = createTRPCRouter({
         roles: ["author"],
       });
 
+      const cookieStore = await cookies();
+      cookieStore.set("session-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+
       return {
         success: true,
         user: userResponse,
-        token,
         message: "Login successful",
       };
     }),

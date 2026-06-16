@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { MapPin, Calendar, Pencil } from "lucide-react";
 import { motion } from "motion/react";
 import { BlogCard } from "../components/blog-card";
 import { EditProfileModal } from "../components/edit-profile-modal";
@@ -19,6 +18,8 @@ import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
 import { useRouter } from "next/navigation";
 import CircularLoading from "../components/circular-loading";
+import { Footer } from "../components/footer";
+import { BarChart3, Eye, Heart, MessageSquare, FileText } from "lucide-react";
 
 const profileTabs = ["Posts", "Saved", "Likes"];
 
@@ -28,18 +29,16 @@ export default function ProfilePage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const router = useRouter();
 
-  // Check auth token — use null to distinguish "not checked yet" from "no token"
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
-  useEffect(() => {
-    setHasToken(!!localStorage.getItem("authToken"));
-  }, []);
-
-  const { data: me, isLoading: meLoading } = api.auth.me.useQuery(undefined, {
-    enabled: hasToken === true,
+  const { data: me, isLoading: meLoading, error: meError } = api.auth.me.useQuery(undefined, {
     retry: false,
   });
 
   const userId = me?.id;
+
+  const { data: dashboardData, isLoading: dashboardLoading } =
+    api.users.getDashboardStats.useQuery(undefined, {
+      enabled: !!userId,
+    });
 
   const { data: profile, refetch: refetchProfile } =
     api.users.getProfile.useQuery(userId!, {
@@ -52,17 +51,17 @@ export default function ProfilePage() {
     refetch: refetchPosts,
   } = api.posts.listByAuthor.useQuery(
     { authorId: userId! },
-    { enabled: !!userId },
+    { enabled: !!userId }
   );
 
   const { data: savedPostsData, isLoading: savedLoading } =
     api.bookmarks.list.useQuery(undefined, {
-      enabled: hasToken === true,
+      enabled: !!me,
     });
 
   const { data: likedPostsData, isLoading: likedLoading } =
     api.likes.listByUser.useQuery(undefined, {
-      enabled: hasToken === true,
+      enabled: !!me,
     });
 
   const deletePost = api.posts.delete.useMutation({
@@ -82,34 +81,65 @@ export default function ProfilePage() {
 
   const userPosts = useMemo(
     () => (userPostsData ?? []).map(mapPostToUI),
-    [userPostsData],
+    [userPostsData]
   );
   const savedPosts = useMemo(
     () => (savedPostsData?.items ?? []).map((b: any) => mapPostToUI(b)),
-    [savedPostsData],
+    [savedPostsData]
   );
   const likedPosts = useMemo(
     () => (likedPostsData?.items ?? []).map((p: any) => mapPostToUI(p)),
-    [likedPostsData],
+    [likedPostsData]
   );
 
-  // If not logged in and not loading, redirect (only after token check completes)
-  useEffect(() => {
-    if (hasToken === false) {
-      router.push("/login");
-    }
-  }, [hasToken, router]);
+  const metricCards = dashboardData
+    ? [
+        { title: "Total Views", value: dashboardData.stats.totalViews, icon: Eye, color: "text-blue-500", bg: "bg-blue-500/10" },
+        { title: "Total Likes", value: dashboardData.stats.totalLikes, icon: Heart, color: "text-pink-500", bg: "bg-pink-500/10" },
+        { title: "Total Comments", value: dashboardData.stats.totalComments, icon: MessageSquare, color: "text-green-500", bg: "bg-green-500/10" },
+        { title: "Total Posts", value: dashboardData.stats.totalPosts, icon: FileText, color: "text-[var(--accent)]", bg: "bg-[var(--accent-glow)]" },
+      ]
+    : [];
 
-  if (hasToken === null || meLoading) {
+  // If not logged in, redirect
+  useEffect(() => {
+    if (!meLoading && (meError || !me)) {
+      router.replace("/login?callbackUrl=%2Fprofile");
+    }
+  }, [me, meError, meLoading, router]);
+
+  // Scroll Reveal Animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    const revealElements = document.querySelectorAll(".reveal:not(.visible)");
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeTab, userPosts, savedPosts, likedPosts]);
+
+  if (meLoading || dashboardLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <CircularLoading />
       </div>
     );
   }
 
   if (!me) {
-    return null; // Will redirect to login
+    return null; // Redirecting...
   }
 
   const author = {
@@ -132,9 +162,9 @@ export default function ProfilePage() {
   const bannerImage = profile?.coverImage || null;
 
   return (
-    <div className="min-h-screen font-['Inter',sans-serif]">
-      {/* Cover Image */}
-      <div className="relative h-48 md:h-64">
+    <div className="min-h-screen bg-bg text-fg font-body pt-16 pb-20">
+      {/* Cover Image Banner */}
+      <div className="relative h-48 md:h-64 border-b border-[var(--border)] overflow-hidden">
         {bannerImage ? (
           <img
             src={bannerImage}
@@ -142,74 +172,70 @@ export default function ProfilePage() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-muted" />
+          <div className="w-full h-full bg-[var(--surface)]" />
         )}
-        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute inset-0 bg-black/25" />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8">
+      <div className="max-w-7xl mx-auto px-6">
         {/* ── Mobile Layout ── */}
         <div className="md:hidden -mt-12 relative z-10">
-          {/* Row: avatar + edit button */}
           <div className="flex items-end justify-between">
             {author.avatar ? (
               <img
                 src={author.avatar}
                 alt={author.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-lg"
+                className="w-24 h-24 rounded-full object-cover border-4 border-[var(--bg)] shadow-xl"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-accent border-4 border-background shadow-lg flex items-center justify-center">
-                <span className="text-white text-3xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-[var(--accent)] border-4 border-[var(--bg)] shadow-xl flex items-center justify-center">
+                <span className="text-[#0a0a0a] text-3xl font-bold">
                   {author.name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
               </div>
             )}
             <button
               onClick={() => setEditOpen(true)}
-              className="px-4 py-2 rounded-full border border-border bg-background hover:bg-muted transition-colors text-foreground text-sm font-medium flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--border)] transition-colors text-[var(--fg)] text-xs font-heading font-medium flex items-center gap-1.5 shadow-md cursor-pointer"
             >
-              <Pencil size={13} />
+              <i className="fa-solid fa-pen text-[10px]"></i>
               Edit Profile
             </button>
           </div>
 
-          {/* User Info */}
           <div className="mt-4">
-            <h1 className="text-xl font-bold">{author.name}</h1>
+            <h1 className="text-xl font-heading font-bold text-[var(--fg)]">{author.name}</h1>
             {author.username && (
-              <p className="text-muted-foreground text-sm">
-                @{author.username}
-              </p>
+              <p className="text-[var(--muted)] text-sm">@{author.username}</p>
             )}
             {author.bio && (
-              <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+              <p className="text-[var(--muted)] text-sm mt-3 leading-relaxed">
                 {author.bio}
               </p>
             )}
-            <div className="flex items-center gap-4 mt-3 text-muted-foreground text-xs">
+            <div className="flex items-center gap-4 mt-3.5 text-[var(--muted)] text-xs">
               {author.location && (
                 <span className="flex items-center gap-1">
-                  <MapPin size={12} />
+                  <i className="fa-solid fa-map-pin text-[10px]"></i>
                   {author.location}
                 </span>
               )}
               {author.joinDate && (
                 <span className="flex items-center gap-1">
-                  <Calendar size={12} />
+                  <i className="fa-solid fa-calendar text-[10px]"></i>
                   Joined {author.joinDate}
                 </span>
               )}
             </div>
-            <div className="flex gap-5 mt-3">
+            <div className="flex gap-5 mt-4">
               {[
                 { label: "Posts", value: author.posts },
                 { label: "Followers", value: author.followers },
                 { label: "Following", value: author.following },
               ].map((stat) => (
-                <div key={stat.label} className="text-sm">
+                <div key={stat.label} className="text-sm text-[var(--fg)]">
                   <span className="font-bold">{stat.value}</span>{" "}
-                  <span className="text-muted-foreground">{stat.label}</span>
+                  <span className="text-[var(--muted)]">{stat.label}</span>
                 </div>
               ))}
             </div>
@@ -217,95 +243,115 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Desktop Layout ── */}
-        <div className="hidden md:flex items-start gap-5 mt-4">
-          {/* Profile Image */}
+        <div className="hidden md:flex items-start gap-6 -mt-16 relative z-10">
           {author.avatar ? (
             <img
               src={author.avatar}
               alt={author.name}
-              className="w-32 h-32 rounded-full object-cover border-4 border-background shadow-lg shrink-0"
+              className="w-32 h-32 rounded-full object-cover border-4 border-[var(--bg)] shadow-xl shrink-0"
             />
           ) : (
-            <div className="w-32 h-32 rounded-full bg-accent border-4 border-background shadow-lg flex items-center justify-center shrink-0">
-              <span className="text-white text-4xl font-bold">
+            <div className="w-32 h-32 rounded-full bg-[var(--accent)] border-4 border-[var(--bg)] shadow-xl flex items-center justify-center shrink-0">
+              <span className="text-[#0a0a0a] text-4xl font-bold">
                 {author.name?.charAt(0)?.toUpperCase() || "U"}
               </span>
             </div>
           )}
 
-          {/* User Info */}
-          <div className="pt-4 flex-1 min-w-0">
+          <div className="pt-20 flex-1 min-w-0">
             <div>
-              <h1 className="text-2xl font-bold">{author.name}</h1>
+              <h1 className="text-3xl font-heading font-bold text-[var(--fg)]">{author.name}</h1>
               {author.username && (
-                <p className="text-muted-foreground text-sm">
-                  @{author.username}
-                </p>
+                <p className="text-[var(--muted)] text-sm">@{author.username}</p>
               )}
               {author.bio && (
-                <p className="text-muted-foreground text-sm mt-2 max-w-lg leading-relaxed">
+                <p className="text-[var(--muted)] text-sm mt-3 max-w-xl leading-relaxed">
                   {author.bio}
                 </p>
               )}
-              <div className="flex items-center gap-4 mt-3 text-muted-foreground text-xs">
+              <div className="flex items-center gap-4 mt-3 text-[var(--muted)] text-xs">
                 {author.location && (
                   <span className="flex items-center gap-1">
-                    <MapPin size={13} />
+                    <i className="fa-solid fa-map-pin text-[11px]"></i>
                     {author.location}
                   </span>
                 )}
                 {author.joinDate && (
                   <span className="flex items-center gap-1">
-                    <Calendar size={13} />
+                    <i className="fa-solid fa-calendar text-[11px]"></i>
                     Joined {author.joinDate}
                   </span>
                 )}
               </div>
-              <div className="flex gap-6 mt-3">
+              <div className="flex gap-6 mt-4">
                 {[
                   { label: "Posts", value: author.posts },
                   { label: "Followers", value: author.followers },
                   { label: "Following", value: author.following },
                 ].map((stat) => (
-                  <div key={stat.label} className="text-sm">
+                  <div key={stat.label} className="text-sm text-[var(--fg)]">
                     <span className="font-bold text-base">{stat.value}</span>{" "}
-                    <span className="text-muted-foreground">{stat.label}</span>
+                    <span className="text-[var(--muted)]">{stat.label}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Edit Profile Button */}
-          <div className="shrink-0">
+          <div className="pt-20 shrink-0">
             <button
               onClick={() => setEditOpen(true)}
-              className="px-5 py-2.5 rounded-full border border-border bg-background hover:bg-muted transition-colors text-foreground text-sm font-medium flex items-center gap-2 shadow-sm"
+              className="px-5 py-2.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--border)] transition-colors text-[var(--fg)] text-xs font-heading font-medium flex items-center gap-2 shadow-md cursor-pointer"
             >
-              <Pencil size={14} />
+              <i className="fa-solid fa-pen text-[10px]"></i>
               Edit Profile
             </button>
           </div>
         </div>
 
+        <div className="mt-10">
+          <h2 className="text-xl font-heading font-bold text-[var(--fg)] mb-6 flex items-center gap-2">
+            <BarChart3 size={20} className="text-[var(--accent)]" /> Dashboard
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {metricCards.map((metric, i) => (
+              <motion.div
+                key={metric.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08, duration: 0.35 }}
+                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex items-start justify-between"
+              >
+                <div>
+                  <p className="text-[var(--muted)] text-sm font-heading font-semibold mb-2 uppercase tracking-wider">{metric.title}</p>
+                  <h3 className="text-3xl font-bold text-[var(--fg)]">{metric.value.toLocaleString()}</h3>
+                </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${metric.bg} ${metric.color}`}>
+                  <metric.icon size={24} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
         {/* Tabs */}
-        <div className="mt-8 border-b border-border">
-          <div className="flex gap-1">
+        <div className="mt-10 border-b border-[var(--border)]">
+          <div className="flex gap-2">
             {profileTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-5 py-3 transition-colors text-sm font-medium ${
+                className={`relative px-6 py-3 transition-colors text-sm font-heading font-medium cursor-pointer ${
                   activeTab === tab
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-[var(--fg)]"
+                    : "text-[var(--muted)] hover:text-[var(--fg)]"
                 }`}
               >
                 {tab}
                 {activeTab === tab && (
                   <motion.div
                     layoutId="profile-tab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)] rounded-full"
                   />
                 )}
               </button>
@@ -316,72 +362,57 @@ export default function ProfilePage() {
         {/* Tab Content */}
         <div className="py-8">
           {activeTab === "Posts" && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {postsLoading ? (
-                <CircularLoading />
+                <div className="col-span-full py-12 flex justify-center"><CircularLoading /></div>
               ) : userPosts.length > 0 ? (
                 userPosts.map((post, i) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
+                  <div key={post.id} className="reveal">
                     <BlogCard
                       post={post}
                       showEditButton
                       onDelete={handleDeletePost}
                     />
-                  </motion.div>
+                  </div>
                 ))
               ) : (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
-                  No posts yet.
+                <p className="text-[var(--muted)] col-span-full text-center py-12 text-sm">
+                  No posts published yet.
                 </p>
               )}
             </div>
           )}
 
           {activeTab === "Saved" && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {savedLoading ? (
-                <CircularLoading />
+                <div className="col-span-full py-12 flex justify-center"><CircularLoading /></div>
               ) : savedPosts.length > 0 ? (
                 savedPosts.map((post, i) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
+                  <div key={post.id} className="reveal">
                     <BlogCard post={post} />
-                  </motion.div>
+                  </div>
                 ))
               ) : (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
-                  No saved posts yet.
+                <p className="text-[var(--muted)] col-span-full text-center py-12 text-sm">
+                  No bookmarked posts yet.
                 </p>
               )}
             </div>
           )}
 
           {activeTab === "Likes" && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {likedLoading ? (
-                <CircularLoading />
+                <div className="col-span-full py-12 flex justify-center"><CircularLoading /></div>
               ) : likedPosts.length > 0 ? (
                 likedPosts.map((post, i) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
+                  <div key={post.id} className="reveal">
                     <BlogCard post={post} />
-                  </motion.div>
+                  </div>
                 ))
               ) : (
-                <p className="text-muted-foreground col-span-full text-center py-12 text-sm">
+                <p className="text-[var(--muted)] col-span-full text-center py-12 text-sm">
                   No liked posts yet.
                 </p>
               )}
@@ -395,19 +426,19 @@ export default function ProfilePage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[var(--surface)] border border-[var(--border)] text-[var(--fg)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Post</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-heading font-bold text-lg">Delete Post</AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--muted)] text-sm">
               Are you sure you want to delete this post? This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-[var(--border)] hover:bg-[var(--surface)] border border-transparent text-[var(--fg)] cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
             >
               Delete
             </AlertDialogAction>
@@ -431,6 +462,8 @@ export default function ProfilePage() {
         }}
         onSuccess={() => refetchProfile()}
       />
+
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { IMAGES } from "@/app/components/mock-data";
 import type { BlogPost } from "@/app/components/mock-data";
+
+const FALLBACK_COVER = "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800";
 
 /**
  * Transforms a backend post response into the BlogPost shape used by UI components.
@@ -13,7 +14,7 @@ export function mapPostToUI(post: any): BlogPost {
     subtitle: post.subtitle || "",
     preview: post.excerpt || post.content?.slice(0, 160) || "",
     content: post.content,
-    coverImage: post.coverImage || IMAGES.tech,
+    coverImage: post.coverImage || FALLBACK_COVER,
     author: {
       id: String(post.author?.id || ""),
       name: post.author?.name || "Unknown",

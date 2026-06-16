@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ContentRenderer } from "../components/content-renderer";
+import CircularLoading from "../components/circular-loading";
 import { api } from "@/lib/trpc";
 import { useRouter } from "next/navigation";
 
@@ -154,16 +155,11 @@ export default function WritePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auth check
-  const [hasToken, setHasToken] = useState(false);
-  useEffect(() => {
-    const token = !!localStorage.getItem("authToken");
-    setHasToken(token);
-    if (!token) router.push("/login");
-  }, [router]);
-
-  const { data: me } = api.auth.me.useQuery(undefined, {
-    enabled: hasToken,
+  const {
+    data: me,
+    isLoading: meLoading,
+    error: meError,
+  } = api.auth.me.useQuery(undefined, {
     retry: false,
   });
   const { data: categoriesData } = api.categories.list.useQuery();
@@ -174,6 +170,12 @@ export default function WritePage() {
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  useEffect(() => {
+    if (!meLoading && (meError || !me)) {
+      router.replace("/login?callbackUrl=%2Fwrite");
+    }
+  }, [me, meError, meLoading, router]);
 
   // Map typed tags to category IDs (match by name) — only used if a tag happens to match a category
   const selectedCategoryIds = (categoriesData ?? [])
@@ -221,7 +223,7 @@ export default function WritePage() {
         tagIds: tagIds.length > 0 ? tagIds : undefined,
       });
 
-      router.push("/profile");
+      router.push("/dashboard");
     } catch (err: any) {
       setPublishError(
         err?.message || "Failed to publish post. Please try again.",
@@ -320,8 +322,20 @@ export default function WritePage() {
     [insertAtCursor],
   );
 
+  if (meLoading) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <CircularLoading />
+      </div>
+    );
+  }
+
+  if (!me) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4 font-['Inter',sans-serif]">
+    <div className="min-h-screen pt-28 pb-12 px-4 bg-bg text-fg font-body">
       <div className="max-w-3xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-10">
@@ -329,27 +343,28 @@ export default function WritePage() {
             {steps.map((step, i) => (
               <div key={step} className="flex items-center gap-2">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border ${
                     i <= currentStep
-                      ? "bg-accent text-white"
-                      : "bg-surface text-muted-foreground"
+                      ? "bg-[var(--accent)] text-[#0a0a0a] border-[var(--accent)]"
+                      : "bg-[var(--surface)] text-[var(--muted)] border-[var(--border)]"
                   }`}
-                  style={{ fontSize: 13, fontWeight: 600 }}
+                  style={{ fontSize: 13, fontWeight: 700 }}
                 >
                   {i < currentStep ? <Check size={14} /> : i + 1}
                 </div>
                 <span
-                  className={`hidden sm:block ${i <= currentStep ? "text-foreground" : "text-muted-foreground"}`}
-                  style={{ fontSize: 13, fontWeight: 500 }}
+                  className={`hidden sm:block font-heading text-sm font-medium ${
+                    i <= currentStep ? "text-[var(--fg)]" : "text-[var(--muted)]"
+                  }`}
                 >
                   {step}
                 </span>
               </div>
             ))}
           </div>
-          <div className="h-1 bg-surface rounded-full overflow-hidden">
+          <div className="h-1.5 bg-[var(--surface)] border border-[var(--border)] rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-accent rounded-full"
+              className="h-full bg-[var(--accent)]"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -367,11 +382,11 @@ export default function WritePage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h1 style={{ fontSize: 28, fontWeight: 700 }} className="mb-2">
+              <h1 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
                 Post Basics
               </h1>
               <p
-                className="text-muted-foreground mb-8"
+                className="text-[var(--muted)] mb-8 font-body"
                 style={{ fontSize: 15 }}
               >
                 Set up the foundation for your new post.
@@ -380,8 +395,7 @@ export default function WritePage() {
               <div className="space-y-6">
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Title
                   </label>
@@ -390,15 +404,14 @@ export default function WritePage() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Give your post a title..."
-                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                    className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                     style={{ fontSize: 15 }}
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Subtitle
                   </label>
@@ -407,15 +420,14 @@ export default function WritePage() {
                     value={subtitle}
                     onChange={(e) => setSubtitle(e.target.value)}
                     placeholder="A brief subtitle (optional)..."
-                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                    className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                     style={{ fontSize: 15 }}
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Cover Image
                   </label>
@@ -427,7 +439,7 @@ export default function WritePage() {
                     className="hidden"
                   />
                   {coverImage ? (
-                    <div className="relative rounded-xl overflow-hidden group">
+                    <div className="relative rounded-xl overflow-hidden group border border-[var(--border)]">
                       <img
                         src={coverImage}
                         alt="Cover"
@@ -451,10 +463,10 @@ export default function WritePage() {
                   ) : (
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full aspect-[16/9] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-accent hover:text-accent transition-colors cursor-pointer"
+                      className="w-full aspect-[16/9] border border-dashed border-[var(--border)] rounded-xl flex flex-col items-center justify-center gap-3 text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer bg-[var(--surface)]"
                     >
                       <Upload size={32} />
-                      <span style={{ fontSize: 14 }}>
+                      <span className="text-sm font-heading font-semibold">
                         Click to upload a cover image
                       </span>
                     </button>
@@ -463,8 +475,7 @@ export default function WritePage() {
 
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Category Tags
                   </label>
@@ -472,13 +483,12 @@ export default function WritePage() {
                     {tags.map((tag) => (
                       <span
                         key={tag}
-                        className="flex items-center gap-1 px-3 py-1 bg-accent/10 text-accent rounded-full"
-                        style={{ fontSize: 13, fontWeight: 500 }}
+                        className="flex items-center gap-1 px-3 py-1 bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/25 rounded-full text-xs font-heading font-bold"
                       >
                         {tag}
                         <button
                           onClick={() => removeTag(tag)}
-                          className="hover:text-accent/70"
+                          className="hover:text-[var(--fg)]"
                         >
                           <X size={12} />
                         </button>
@@ -492,13 +502,12 @@ export default function WritePage() {
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addTag()}
                       placeholder="Add a tag..."
-                      className="flex-1 px-4 py-2.5 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+                      className="flex-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
                       style={{ fontSize: 14 }}
                     />
                     <button
                       onClick={addTag}
-                      className="px-4 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors"
-                      style={{ fontSize: 14, fontWeight: 500 }}
+                      className="px-5 py-2.5 bg-[var(--accent)] text-[#0a0a0a] rounded-xl hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-heading font-bold text-sm"
                     >
                       Add
                     </button>
@@ -518,15 +527,15 @@ export default function WritePage() {
               transition={{ duration: 0.3 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h1 style={{ fontSize: 28, fontWeight: 700 }}>Write Content</h1>
+                <h1 className="font-heading text-3xl font-bold text-[var(--fg)]">Write Content</h1>
                 <button
                   onClick={() => setShowPreview(!showPreview)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
                     showPreview
-                      ? "bg-accent/10 text-accent"
-                      : "bg-surface text-muted-foreground hover:text-foreground"
+                      ? "bg-[var(--accent-glow)] text-[var(--accent)] border-[var(--accent)]/30"
+                      : "bg-[var(--surface)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)]"
                   }`}
-                  style={{ fontSize: 13, fontWeight: 500 }}
+                  style={{ fontSize: 13, fontFamily: "Space Grotesk, sans-serif" }}
                 >
                   {showPreview ? (
                     <SplitSquareHorizontal size={15} />
@@ -537,20 +546,17 @@ export default function WritePage() {
                 </button>
               </div>
               <p
-                className="text-muted-foreground mb-6"
-                style={{ fontSize: 15 }}
+                className="text-[var(--muted)] mb-6 font-body text-sm"
               >
                 Craft your story. Use{" "}
                 <code
-                  className="px-1.5 py-0.5 bg-surface border border-border rounded"
-                  style={{ fontSize: 13 }}
+                  className="px-1.5 py-0.5 bg-[var(--surface)] border border-[var(--border)] rounded font-mono text-xs text-[var(--accent)]"
                 >
                   $...$
                 </code>{" "}
                 for inline math and{" "}
                 <code
-                  className="px-1.5 py-0.5 bg-surface border border-border rounded"
-                  style={{ fontSize: 13 }}
+                  className="px-1.5 py-0.5 bg-[var(--surface)] border border-[var(--border)] rounded font-mono text-xs text-[var(--accent)]"
                 >
                   $$...$$
                 </code>{" "}
@@ -558,20 +564,20 @@ export default function WritePage() {
               </p>
 
               {/* Toolbar */}
-              <div className="flex items-center gap-0.5 p-2 bg-surface border border-border rounded-t-xl flex-wrap">
+              <div className="flex items-center gap-0.5 p-2 bg-[var(--surface)] border border-[var(--border)] rounded-t-xl flex-wrap">
                 {/* Formatting buttons */}
                 {formattingActions.map((action) => (
                   <button
                     key={action.label}
                     onClick={() => insertAtCursor(action)}
                     title={action.label}
-                    className="p-2 rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
                   >
                     <action.icon size={16} />
                   </button>
                 ))}
 
-                <div className="w-px h-5 bg-border mx-1" />
+                <div className="w-px h-5 bg-[var(--border)] mx-1" />
 
                 {/* LaTeX buttons */}
                 {latexActions.map((action) => (
@@ -579,7 +585,7 @@ export default function WritePage() {
                     key={action.label}
                     onClick={() => insertAtCursor(action)}
                     title={action.label}
-                    className="p-2 rounded-lg hover:bg-accent/10 text-accent/70 hover:text-accent transition-colors"
+                    className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--accent)] transition-colors cursor-pointer"
                   >
                     <action.icon size={16} />
                   </button>
@@ -590,14 +596,13 @@ export default function WritePage() {
                   <button
                     onClick={() => setShowSnippets(!showSnippets)}
                     title="Math Snippets"
-                    className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${
+                    className={`p-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${
                       showSnippets
-                        ? "bg-accent/10 text-accent"
-                        : "hover:bg-accent/10 text-accent/70 hover:text-accent"
+                        ? "bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/30"
+                        : "hover:bg-[var(--border)] text-[var(--accent)]"
                     }`}
-                    style={{ fontSize: 12, fontWeight: 500 }}
                   >
-                    <span style={{ fontFamily: "serif", fontSize: 15 }}>
+                    <span style={{ fontFamily: "serif", fontSize: 15, fontWeight: 700 }}>
                       f(x)
                     </span>
                   </button>
@@ -608,10 +613,10 @@ export default function WritePage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -4, scale: 0.97 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-1 w-64 bg-card border border-border rounded-xl shadow-xl z-50 p-2 max-h-72 overflow-y-auto"
+                        className="absolute top-full left-0 mt-1 w-64 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl z-50 p-2 max-h-72 overflow-y-auto"
                       >
                         <p
-                          className="px-2 py-1 text-muted-foreground"
+                          className="px-2 py-1 text-[var(--muted)] font-heading"
                           style={{ fontSize: 11, fontWeight: 600 }}
                         >
                           MATH SNIPPETS
@@ -620,14 +625,13 @@ export default function WritePage() {
                           <button
                             key={snippet.label}
                             onClick={() => insertSnippet(snippet.tex)}
-                            className="w-full text-left px-2 py-2 rounded-lg hover:bg-surface transition-colors flex items-center justify-between gap-2"
+                            className="w-full text-left px-2 py-2 rounded-lg hover:bg-[var(--surface)] transition-colors flex items-center justify-between gap-2 cursor-pointer"
                           >
-                            <span style={{ fontSize: 13, fontWeight: 500 }}>
+                            <span className="font-body text-xs font-semibold text-[var(--fg)]">
                               {snippet.label}
                             </span>
                             <code
-                              className="text-accent/60 shrink-0 max-w-[130px] truncate"
-                              style={{ fontSize: 11 }}
+                              className="text-[var(--accent)] shrink-0 max-w-[130px] truncate text-[10px]"
                             >
                               {snippet.tex}
                             </code>
@@ -638,10 +642,10 @@ export default function WritePage() {
                   </AnimatePresence>
                 </div>
 
-                <div className="w-px h-5 bg-border mx-1" />
+                <div className="w-px h-5 bg-[var(--border)] mx-1" />
 
                 <button
-                  className="p-2 rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
                   title="Insert Image"
                 >
                   <ImageIcon size={16} />
@@ -650,17 +654,17 @@ export default function WritePage() {
 
               {/* Editor & Preview */}
               <div
-                className={`border border-t-0 border-border rounded-b-xl overflow-hidden ${showPreview ? "grid md:grid-cols-2" : ""}`}
+                className={`border border-t-0 border-[var(--border)] rounded-b-xl overflow-hidden ${showPreview ? "grid md:grid-cols-2" : ""}`}
               >
                 {/* Textarea */}
-                <div className={showPreview ? "border-r border-border" : ""}>
+                <div className={showPreview ? "border-r border-[var(--border)]" : ""}>
                   <textarea
                     ref={textareaRef}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder={`Start writing your story...\n\nTry some LaTeX:\n  Inline: $E = mc^2$\n  Block:\n  $$\n  \\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n  $$\n\nFormatting:\n  ## Heading\n  **bold** *italic* \`code\`\n  - bullet point\n  > blockquote`}
-                    className="w-full min-h-[400px] px-6 py-5 bg-background focus:outline-none resize-none font-mono"
-                    style={{ fontSize: 14, lineHeight: 1.8 }}
+                    className="w-full min-h-[400px] px-6 py-5 bg-[var(--bg)] text-[var(--fg)] focus:outline-none resize-none font-mono text-sm border-0"
+                    style={{ lineHeight: 1.8 }}
                     onKeyDown={(e) => {
                       // Tab key inserts spaces
                       if (e.key === "Tab") {
@@ -681,25 +685,26 @@ export default function WritePage() {
 
                 {/* Live Preview */}
                 {showPreview && (
-                  <div className="p-6 bg-background overflow-y-auto max-h-[500px]">
-                    <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-border">
-                      <Eye size={14} className="text-muted-foreground" />
+                  <div className="p-6 bg-[var(--bg)] overflow-y-auto max-h-[500px]">
+                    <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-[var(--border)]">
+                      <Eye size={14} className="text-[var(--muted)]" />
                       <span
-                        className="text-muted-foreground"
+                        className="text-[var(--muted)] font-heading"
                         style={{ fontSize: 12, fontWeight: 600 }}
                       >
                         LIVE PREVIEW
                       </span>
                     </div>
-                    <ContentRenderer content={content} />
+                    <div className="prose prose-invert prose-amber max-w-none prose-headings:font-heading font-body">
+                      <ContentRenderer content={content} />
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Status bar */}
               <div
-                className="flex items-center justify-between mt-3 text-muted-foreground"
-                style={{ fontSize: 13 }}
+                className="flex items-center justify-between mt-3 text-[var(--muted)] text-xs font-body"
               >
                 <div className="flex items-center gap-4">
                   <span>{wordCount} words</span>
@@ -726,11 +731,11 @@ export default function WritePage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h1 style={{ fontSize: 28, fontWeight: 700 }} className="mb-2">
+              <h1 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
                 Publish Settings
               </h1>
               <p
-                className="text-muted-foreground mb-8"
+                className="text-[var(--muted)] mb-8 font-body"
                 style={{ fontSize: 15 }}
               >
                 Review and configure your post before publishing.
@@ -740,8 +745,7 @@ export default function WritePage() {
                 {/* Visibility */}
                 <div>
                   <label
-                    className="block mb-3"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-3 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Visibility
                   </label>
@@ -762,30 +766,29 @@ export default function WritePage() {
                     ].map((opt) => (
                       <button
                         key={opt.val}
+                        type="button"
                         onClick={() => setVisibility(opt.val)}
-                        className={`flex-1 p-4 rounded-xl border-2 transition-all text-left ${
+                        className={`flex-1 p-4 rounded-xl border-2 transition-all text-left cursor-pointer ${
                           visibility === opt.val
-                            ? "border-accent bg-accent/5"
-                            : "border-border hover:border-muted-foreground/30"
+                            ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
+                            : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--muted)]/30"
                         }`}
                       >
                         <opt.icon
                           size={20}
                           className={
                             visibility === opt.val
-                              ? "text-accent"
-                              : "text-muted-foreground"
+                              ? "text-[var(--accent)]"
+                              : "text-[var(--muted)]"
                           }
                         />
                         <p
-                          className="mt-2"
-                          style={{ fontSize: 14, fontWeight: 600 }}
+                          className="mt-2 font-heading font-semibold text-[var(--fg)] text-sm"
                         >
                           {opt.label}
                         </p>
                         <p
-                          className="text-muted-foreground"
-                          style={{ fontSize: 12 }}
+                          className="text-[var(--muted)] text-xs mt-1 font-body"
                         >
                           {opt.desc}
                         </p>
@@ -797,56 +800,57 @@ export default function WritePage() {
                 {/* Tags */}
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Tags
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1 bg-accent/10 text-accent rounded-full"
-                        style={{ fontSize: 13, fontWeight: 500 }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {tags.length > 0 ? (
+                      tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-3 py-1 bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/25 rounded-full text-xs font-heading font-bold"
+                        >
+                          {tag}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[var(--muted)] text-xs italic font-body">No tags added</span>
+                    )}
                   </div>
                 </div>
 
                 {/* Preview Card with rendered content */}
                 <div>
                   <label
-                    className="block mb-2"
-                    style={{ fontSize: 14, fontWeight: 600 }}
+                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
                   >
                     Preview
                   </label>
-                  <div className="p-6 bg-surface rounded-xl border border-border">
+                  <div className="p-6 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
                     {coverImage && (
                       <img
                         src={coverImage}
                         alt="Preview"
-                        className="w-full aspect-[16/8] object-cover rounded-lg mb-4"
+                        className="w-full aspect-[16/8] object-cover rounded-lg mb-4 border border-[var(--border)]"
                       />
                     )}
-                    <h3 style={{ fontSize: 20, fontWeight: 700 }}>
+                    <h3 className="font-heading text-xl font-bold text-[var(--fg)]">
                       {title || "Untitled Post"}
                     </h3>
                     {subtitle && (
                       <p
-                        className="text-muted-foreground mt-1"
-                        style={{ fontSize: 14 }}
+                        className="text-[var(--muted)] mt-1 font-body text-sm"
                       >
                         {subtitle}
                       </p>
                     )}
-                    <div className="mt-3 border-t border-border pt-3">
-                      <ContentRenderer
-                        content={content || "No content yet..."}
-                        className="line-clamp-6"
-                      />
+                    <div className="mt-3 border-t border-[var(--border)] pt-3">
+                      <div className="prose prose-invert prose-amber max-w-none prose-headings:font-heading font-body text-sm line-clamp-6">
+                        <ContentRenderer
+                          content={content || "No content yet..."}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -856,14 +860,14 @@ export default function WritePage() {
         </AnimatePresence>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-10 pt-6 border-t border-border">
+        <div className="flex justify-between mt-10 pt-6 border-t border-[var(--border)]">
           <button
             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
             disabled={currentStep === 0}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all cursor-pointer ${
               currentStep === 0
-                ? "text-muted-foreground/40 cursor-not-allowed"
-                : "text-foreground hover:bg-surface"
+                ? "text-[var(--muted)]/30 border-[var(--border)] cursor-not-allowed bg-[var(--surface)]"
+                : "text-[var(--fg)] hover:bg-[var(--surface)] border-[var(--border)] bg-transparent"
             }`}
             style={{ fontSize: 14, fontWeight: 500 }}
           >
@@ -874,8 +878,7 @@ export default function WritePage() {
           {currentStep < steps.length - 1 ? (
             <button
               onClick={() => setCurrentStep(currentStep + 1)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors"
-              style={{ fontSize: 14, fontWeight: 500 }}
+              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--accent)] text-[#0a0a0a] border border-[var(--accent)] rounded-xl hover:bg-transparent hover:text-[var(--accent)] transition-all font-heading font-bold text-sm cursor-pointer"
             >
               Next
               <ArrowRight size={16} />
@@ -890,8 +893,7 @@ export default function WritePage() {
                 !title ||
                 !content
               }
-              className="flex items-center gap-2 px-8 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors disabled:opacity-50"
-              style={{ fontSize: 14, fontWeight: 600 }}
+              className="flex items-center gap-2 px-8 py-2.5 bg-[var(--accent)] text-[#0a0a0a] border border-[var(--accent)] rounded-xl hover:bg-transparent hover:text-[var(--accent)] transition-all font-heading font-bold text-sm cursor-pointer disabled:opacity-50"
             >
               {createPost.isPending || isSubmitting ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -905,7 +907,7 @@ export default function WritePage() {
           )}
         </div>
         {publishError && (
-          <p className="text-red-500 text-center mt-2" style={{ fontSize: 13 }}>
+          <p className="text-red-500 text-center mt-2 font-body text-xs">
             {publishError}
           </p>
         )}

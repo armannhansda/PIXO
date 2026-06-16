@@ -38,6 +38,7 @@ export const posts = pgTable('posts', {
    searchVector: tsvector('search_vector'),
   coverImage: text('cover_image'),
   published: boolean('published').default(false),
+  views: integer('views').default(0),
   authorId: integer('author_id').references(() => users.id),
   deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow(),

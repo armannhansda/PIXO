@@ -64,6 +64,13 @@
       "when": 1773142982787,
       "tag": "0008_loud_ezekiel_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781605046110,
+      "tag": "0009_grey_stick",
+      "breakpoints": true
     }
   ]
 }

@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 
-import { users, posts, followers } from "@/lib/db/schema";
+import { users, posts, followers, likes, comments } from "@/lib/db/schema";
 import type { Context } from "../context";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { validatedProcedure } from "../middlewares/validation";
+import { validatedProcedure, authMiddleware } from "../middlewares";
 
 const userIdSchema = z.number().int().positive();
 
@@ -349,6 +349,43 @@ export const usersRouter = createTRPCRouter({
           followers: stats?.followersCount ?? 0,
           following: stats?.followingCount ?? 0,
         },
+      };
+    }),
+
+  // Get Publisher Dashboard Stats
+  getDashboardStats: validatedProcedure(z.undefined())
+    .use(authMiddleware)
+    .query(async ({ ctx }) => {
+      const userId = Number(ctx.user.id);
+
+      const [stats] = await ctx.db.execute<{
+        totalViews: number;
+        totalPosts: number;
+        totalLikes: number;
+        totalComments: number;
+      }>(sql`
+        SELECT 
+          COALESCE(SUM(p.views), 0)::int as "totalViews",
+          (SELECT COUNT(*)::int FROM ${posts} WHERE author_id = ${userId}) as "totalPosts",
+          (SELECT COUNT(*)::int FROM ${likes} l JOIN ${posts} p ON l.post_id = p.id WHERE p.author_id = ${userId}) as "totalLikes",
+          (SELECT COUNT(*)::int FROM ${comments} c JOIN ${posts} p ON c.post_id = p.id WHERE p.author_id = ${userId} AND c.deleted_at IS NULL) as "totalComments"
+        FROM ${posts} p
+        WHERE p.author_id = ${userId}
+      `);
+
+      const recentComments = await ctx.db.query.comments.findMany({
+        where: sql`${comments.postId} IN (SELECT id FROM ${posts} WHERE author_id = ${userId}) AND ${comments.deletedAt} IS NULL`,
+        orderBy: desc(comments.createdAt),
+        limit: 5,
+        with: {
+           author: { columns: { name: true, profileImage: true } },
+           post: { columns: { title: true, slug: true, id: true } }
+        }
+      });
+
+      return {
+        stats: stats || { totalViews: 0, totalPosts: 0, totalLikes: 0, totalComments: 0 },
+        recentComments
       };
     }),
 });

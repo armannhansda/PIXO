@@ -88,14 +88,18 @@ export function ContentRenderer({ content, className = "" }: { content: string; 
 
       // Heading ###
       if (line.startsWith("### ")) {
-        blocks.push(`<h3 style="font-size:18px;font-weight:700;margin:20px 0 8px;">${processInlineFormatting(line.slice(4))}</h3>`);
+        const headingText = line.slice(4);
+        const headingId = headingText.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+        blocks.push(`<h3 id="${headingId}" style="font-size:18px;font-weight:700;margin:20px 0 8px;">${processInlineFormatting(headingText)}</h3>`);
         i++;
         continue;
       }
 
       // Heading ##
       if (line.startsWith("## ")) {
-        blocks.push(`<h2 style="font-size:22px;font-weight:700;margin:24px 0 10px;">${processInlineFormatting(line.slice(3))}</h2>`);
+        const headingText = line.slice(3);
+        const headingId = headingText.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+        blocks.push(`<h2 id="${headingId}" style="font-size:22px;font-weight:700;margin:24px 0 10px;">${processInlineFormatting(headingText)}</h2>`);
         i++;
         continue;
       }

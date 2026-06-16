@@ -347,49 +347,51 @@ export default function EditPostPage() {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4 font-['Inter',sans-serif]">
+    <div className="min-h-screen pt-28 pb-12 px-4 bg-bg text-fg font-body">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
           >
             <ArrowLeft size={18} />
-            <span className="text-sm font-medium">Back</span>
+            <span className="text-sm font-heading font-medium">Back</span>
           </button>
-          <h1 className="text-2xl font-bold">Edit Post</h1>
+          <h1 className="font-heading text-2xl font-bold text-[var(--fg)]">Edit Post</h1>
           <div className="w-16" />
         </div>
 
         <div className="space-y-8">
           {/* Title */}
           <div>
-            <label className="block mb-2 text-sm font-semibold">Title</label>
+            <label className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give your post a title..."
-              className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all text-[15px]"
+              className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
+              style={{ fontSize: 15 }}
             />
           </div>
 
           {/* Subtitle */}
           <div>
-            <label className="block mb-2 text-sm font-semibold">Subtitle</label>
+            <label className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm">Subtitle</label>
             <input
               type="text"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="A brief subtitle (optional)..."
-              className="w-full px-4 py-3 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all text-[15px]"
+              className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
+              style={{ fontSize: 15 }}
             />
           </div>
 
           {/* Cover Image */}
           <div>
-            <label className="block mb-2 text-sm font-semibold">
+            <label className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm">
               Cover Image
             </label>
             <input
@@ -400,7 +402,7 @@ export default function EditPostPage() {
               className="hidden"
             />
             {coverImage ? (
-              <div className="relative rounded-xl overflow-hidden group">
+              <div className="relative rounded-xl overflow-hidden group border border-[var(--border)]">
                 <img
                   src={coverImage}
                   alt="Cover"
@@ -421,27 +423,27 @@ export default function EditPostPage() {
             ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full aspect-[16/9] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-accent hover:text-accent transition-colors cursor-pointer"
+                className="w-full aspect-[16/9] border border-dashed border-[var(--border)] rounded-xl flex flex-col items-center justify-center gap-3 text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer bg-[var(--surface)]"
               >
                 <Upload size={32} />
-                <span className="text-sm">Click to upload a cover image</span>
+                <span className="text-sm font-heading font-semibold">Click to upload a cover image</span>
               </button>
             )}
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block mb-2 text-sm font-semibold">Tags</label>
+            <label className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm">Tags</label>
             <div className="flex flex-wrap gap-2 mb-3">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 px-3 py-1 bg-accent/10 text-accent rounded-full text-[13px] font-medium"
+                  className="flex items-center gap-1 px-3 py-1 bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/25 rounded-full text-xs font-heading font-bold"
                 >
                   {tag}
                   <button
                     onClick={() => removeTag(tag)}
-                    className="hover:text-accent/70"
+                    className="hover:text-[var(--fg)]"
                   >
                     <X size={12} />
                   </button>
@@ -457,11 +459,11 @@ export default function EditPostPage() {
                   e.key === "Enter" && (e.preventDefault(), addTag())
                 }
                 placeholder="Add a tag..."
-                className="flex-1 px-4 py-2.5 bg-surface border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all text-sm"
+                className="flex-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all text-sm"
               />
               <button
                 onClick={addTag}
-                className="px-4 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors text-sm font-medium"
+                className="px-5 py-2.5 bg-[var(--accent)] text-[#0a0a0a] rounded-xl hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-heading font-bold text-sm cursor-pointer"
               >
                 Add
               </button>
@@ -471,18 +473,18 @@ export default function EditPostPage() {
           {/* Content Editor */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold">Content</label>
+              <label className="font-heading font-semibold text-[var(--fg)] text-sm">Content</label>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-[var(--muted)] font-body">
                   {wordCount} words &middot; ~
                   {Math.max(1, Math.ceil(wordCount / 200))} min read
                 </span>
                 <button
                   onClick={() => setShowPreview(!showPreview)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-[13px] font-medium ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-[13px] font-medium cursor-pointer ${
                     showPreview
-                      ? "bg-accent/10 text-accent"
-                      : "bg-surface text-muted-foreground hover:text-foreground"
+                      ? "bg-[var(--accent-glow)] text-[var(--accent)] border-[var(--accent)]/30"
+                      : "bg-[var(--surface)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)]"
                   }`}
                 >
                   {showPreview ? (
@@ -496,26 +498,26 @@ export default function EditPostPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="flex items-center gap-0.5 p-2 bg-surface border border-border rounded-t-xl flex-wrap">
+            <div className="flex items-center gap-0.5 p-2 bg-[var(--surface)] border border-[var(--border)] rounded-t-xl flex-wrap">
               {formattingActions.map((action) => (
                 <button
                   key={action.label}
                   onClick={() => insertAtCursor(action)}
                   title={action.label}
-                  className="p-2 rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
                 >
                   <action.icon size={16} />
                 </button>
               ))}
 
-              <div className="w-px h-5 bg-border mx-1" />
+              <div className="w-px h-5 bg-[var(--border)] mx-1" />
 
               {latexActions.map((action) => (
                 <button
                   key={action.label}
                   onClick={() => insertAtCursor(action)}
                   title={action.label}
-                  className="p-2 rounded-lg hover:bg-accent/10 text-accent/70 hover:text-accent transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--accent)] transition-colors cursor-pointer"
                 >
                   <action.icon size={16} />
                 </button>
@@ -526,13 +528,13 @@ export default function EditPostPage() {
                 <button
                   onClick={() => setShowSnippets(!showSnippets)}
                   title="Math Snippets"
-                  className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${
+                  className={`p-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${
                     showSnippets
-                      ? "bg-accent/10 text-accent"
-                      : "hover:bg-accent/10 text-accent/70 hover:text-accent"
+                      ? "bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/30"
+                      : "hover:bg-[var(--border)] text-[var(--accent)]"
                   }`}
                 >
-                  <span style={{ fontFamily: "serif", fontSize: 15 }}>
+                  <span style={{ fontFamily: "serif", fontSize: 15, fontWeight: 700 }}>
                     f(x)
                   </span>
                 </button>
@@ -543,21 +545,21 @@ export default function EditPostPage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.97 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-1 w-64 bg-card border border-border rounded-xl shadow-xl z-50 p-2 max-h-72 overflow-y-auto"
+                      className="absolute top-full left-0 mt-1 w-64 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl z-50 p-2 max-h-72 overflow-y-auto"
                     >
-                      <p className="px-2 py-1 text-muted-foreground text-[11px] font-semibold">
+                      <p className="px-2 py-1 text-[var(--muted)] text-[11px] font-heading font-semibold">
                         MATH SNIPPETS
                       </p>
                       {latexSnippets.map((snippet) => (
                         <button
                           key={snippet.label}
                           onClick={() => insertSnippet(snippet.tex)}
-                          className="w-full text-left px-2 py-2 rounded-lg hover:bg-surface transition-colors flex items-center justify-between gap-2"
+                          className="w-full text-left px-2 py-2 rounded-lg hover:bg-[var(--surface)] transition-colors flex items-center justify-between gap-2 cursor-pointer"
                         >
-                          <span className="text-[13px] font-medium">
+                          <span className="font-body text-xs font-semibold text-[var(--fg)]">
                             {snippet.label}
                           </span>
-                          <code className="text-accent/60 shrink-0 max-w-[130px] truncate text-[11px]">
+                          <code className="text-[var(--accent)] shrink-0 max-w-[130px] truncate text-[11px]">
                             {snippet.tex}
                           </code>
                         </button>
@@ -567,9 +569,9 @@ export default function EditPostPage() {
                 </AnimatePresence>
               </div>
 
-              <div className="w-px h-5 bg-border mx-1" />
+              <div className="w-px h-5 bg-[var(--border)] mx-1" />
               <button
-                className="p-2 rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
                 title="Insert Image"
               >
                 <ImageIcon size={16} />
@@ -578,17 +580,17 @@ export default function EditPostPage() {
 
             {/* Editor & Preview */}
             <div
-              className={`border border-t-0 border-border rounded-b-xl overflow-hidden ${
+              className={`border border-t-0 border-[var(--border)] rounded-b-xl overflow-hidden ${
                 showPreview ? "grid md:grid-cols-2" : ""
               }`}
             >
-              <div className={showPreview ? "border-r border-border" : ""}>
+              <div className={showPreview ? "border-r border-[var(--border)]" : ""}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Start writing your story..."
-                  className="w-full min-h-[400px] px-6 py-5 bg-background focus:outline-none resize-none font-mono text-sm"
+                  className="w-full min-h-[400px] px-6 py-5 bg-[var(--bg)] text-[var(--fg)] focus:outline-none resize-none font-mono text-sm border-0"
                   style={{ lineHeight: 1.8 }}
                   onKeyDown={(e) => {
                     if (e.key === "Tab") {
@@ -608,14 +610,16 @@ export default function EditPostPage() {
               </div>
 
               {showPreview && (
-                <div className="p-6 bg-background overflow-y-auto max-h-[500px]">
-                  <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-border">
-                    <Eye size={14} className="text-muted-foreground" />
-                    <span className="text-muted-foreground text-xs font-semibold">
+                <div className="p-6 bg-[var(--bg)] overflow-y-auto max-h-[500px]">
+                  <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-[var(--border)]">
+                    <Eye size={14} className="text-[var(--muted)]" />
+                    <span className="text-[var(--muted)] text-xs font-heading font-semibold">
                       LIVE PREVIEW
                     </span>
                   </div>
-                  <ContentRenderer content={content} />
+                  <div className="prose prose-invert prose-amber max-w-none prose-headings:font-heading font-body">
+                    <ContentRenderer content={content} />
+                  </div>
                 </div>
               )}
             </div>
@@ -623,7 +627,7 @@ export default function EditPostPage() {
 
           {/* Visibility */}
           <div>
-            <label className="block mb-3 text-sm font-semibold">
+            <label className="block mb-3 font-heading font-semibold text-[var(--fg)] text-sm">
               Visibility
             </label>
             <div className="flex gap-3">
@@ -643,23 +647,24 @@ export default function EditPostPage() {
               ].map((opt) => (
                 <button
                   key={opt.val}
+                  type="button"
                   onClick={() => setVisibility(opt.val)}
-                  className={`flex-1 p-4 rounded-xl border-2 transition-all text-left ${
+                  className={`flex-1 p-4 rounded-xl border-2 transition-all text-left cursor-pointer ${
                     visibility === opt.val
-                      ? "border-accent bg-accent/5"
-                      : "border-border hover:border-muted-foreground/30"
+                      ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--muted)]/30"
                   }`}
                 >
                   <opt.icon
                     size={20}
                     className={
                       visibility === opt.val
-                        ? "text-accent"
-                        : "text-muted-foreground"
+                        ? "text-[var(--accent)]"
+                        : "text-[var(--muted)]"
                     }
                   />
-                  <p className="mt-2 text-sm font-semibold">{opt.label}</p>
-                  <p className="text-muted-foreground text-xs">{opt.desc}</p>
+                  <p className="mt-2 font-heading font-semibold text-[var(--fg)] text-sm">{opt.label}</p>
+                  <p className="text-[var(--muted)] text-xs mt-1 font-body">{opt.desc}</p>
                 </button>
               ))}
             </div>
@@ -667,10 +672,10 @@ export default function EditPostPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between mt-10 pt-6 border-t border-border">
+        <div className="flex justify-between mt-10 pt-6 border-t border-[var(--border)]">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-foreground hover:bg-surface transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--border)] text-[var(--fg)] hover:bg-[var(--surface)] bg-transparent transition-colors text-sm font-heading font-bold cursor-pointer"
           >
             <ArrowLeft size={16} />
             Cancel
@@ -684,7 +689,7 @@ export default function EditPostPage() {
               !title ||
               !content
             }
-            className="flex items-center gap-2 px-8 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors disabled:opacity-50 text-sm font-semibold"
+            className="flex items-center gap-2 px-8 py-2.5 bg-[var(--accent)] text-[#0a0a0a] border border-[var(--accent)] rounded-xl hover:bg-transparent hover:text-[var(--accent)] transition-colors disabled:opacity-50 text-sm font-heading font-bold cursor-pointer"
           >
             {updatePost.isPending || isSubmitting ? (
               <Loader2 size={16} className="animate-spin" />
@@ -697,7 +702,7 @@ export default function EditPostPage() {
           </button>
         </div>
         {updateError && (
-          <p className="text-red-500 text-center mt-2 text-[13px]">
+          <p className="text-red-500 text-center mt-2 font-body text-[13px]">
             {updateError}
           </p>
         )}

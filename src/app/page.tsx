@@ -1,605 +1,680 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Search,
-  TrendingUp,
-  Sparkles,
-  Clock,
-  ArrowRight,
-  Bookmark,
-  Heart,
-  ArrowUpRight,
-} from "lucide-react";
-import { motion } from "motion/react";
+import Image from "next/image";
+import CircularLoading from "./components/circular-loading";
+import { Footer } from "./components/footer";
 import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
-import { TrendingSection } from "./components/trending-section";
-import type { BlogPost } from "./components/mock-data";
-import CircularLoading from "./components/circular-loading";
-
-const trendingTags = [
-  "Design Systems",
-  "AI & ML",
-  "Remote Work",
-  "Sustainability",
-  "Typography",
-  "Architecture",
-  "Minimalism",
-  "Productivity",
-];
 
 export default function HomePage() {
+  const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
-  const { data: postsData, isLoading } = api.posts.list.useQuery();
 
-  const blogPosts = (postsData ?? []).map(mapPostToUI);
+  // Connect to tRPC backend and fallback to mock data
+  const { data: postsData, isLoading: postsLoading } = api.posts.list.useQuery();
+  const { data: categoriesData } = api.categories.list.useQuery();
 
-  // Data splits for sections
-  const featured = blogPosts.slice(0, 3);
-  const trending = blogPosts.slice(3, 6);
-  const latest = blogPosts.slice(5, 11);
+  const blogPosts = useMemo(() => {
+    if (postsData) {
+      return postsData.map(mapPostToUI);
+    }
+    return [];
+  }, [postsData]);
 
-  const handleSearch = () => {
-    const q = searchQuery.trim();
-    if (q) {
-      router.push(`/explore?q=${encodeURIComponent(q)}`);
+  const categoriesList = useMemo(() => {
+    if (categoriesData && categoriesData.length > 0) {
+      const names = categoriesData.map((c: any) => c.name);
+      return [
+        { id: "all", label: "All Posts" },
+        ...names.map((name) => ({ id: name.toLowerCase(), label: name })),
+      ];
+    }
+    return [
+      { id: "all", label: "All Posts" },
+      { id: "design", label: "Design" },
+      { id: "lifestyle", label: "Lifestyle" },
+      { id: "engineering", label: "Engineering" },
+      { id: "architecture", label: "Architecture" },
+    ];
+  }, [categoriesData]);
+
+  const filteredPosts = useMemo(() => {
+    if (activeCategory === "all") {
+      return blogPosts;
+    } else {
+      return blogPosts.filter(
+        (p) => p.category.toLowerCase() === activeCategory.toLowerCase()
+      );
+    }
+  }, [activeCategory, blogPosts]);
+
+  // Reading progress bar scroll listener (Step 12.1)
+  useEffect(() => {
+    const progressBar = document.getElementById("reading-progress");
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      if (progressBar) {
+        progressBar.style.width = progress + "%";
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Toast Notification utility (Step 12.2)
+  const showToast = (message: string) => {
+    const toast = document.getElementById("toast");
+    if (toast) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3500);
     }
   };
 
-  return (
-    <div className="min-h-screen font-['Inter',sans-serif]">
-      {/* ═══════════════════════════ HERO ═══════════════════════════ */}
-      <section className="relative pt-18 pb-10 md:pt-30 md:pb-18 px-3 overflow-hidden">
-        {/* Ambient background glow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div
-            className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-20"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, var(--accent) 0%, transparent 70%)",
-              filter: "blur(100px)",
-            }}
-          />
-        </div>
+  const closeSearchOverlay = () => {
+    const searchOverlay = document.getElementById("searchOverlay");
+    if (searchOverlay) {
+      searchOverlay.classList.add("hidden");
+    }
+    setSearchQuery("");
+  };
 
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 text-accent rounded-full mb-6"
-            style={{ fontSize: 13, fontWeight: 600 }}
-          >
-            <Sparkles size={14} />
-            Welcome to PIXO
-          </motion.div>
+  // Keyboard shortcut listener for Ctrl+K search overlay
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const searchOverlay = document.getElementById("searchOverlay");
+      const searchInput = document.getElementById("searchInput") as HTMLInputElement;
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            style={{
-              fontSize: "clamp(36px, 7vw, 56px)",
-              fontWeight: 800,
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Discover Ideas
-            <br />
-            <span className="text-accent">That Matter</span>
-          </motion.h1>
+      if (e.key === "Escape") {
+        closeSearchOverlay();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (searchOverlay) {
+          searchOverlay.classList.remove("hidden");
+          setTimeout(() => searchInput?.focus(), 100);
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
-          {/* <motion.p
-            className="text-muted-foreground mt-5 max-w-xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            style={{ fontSize: 18, lineHeight: 1.6 }}
-          >
-            Explore stories, insights, and perspectives from creators and
-            thinkers shaping the future.
-          </motion.p> */}
+  // Search Results calculations
+  const searchResults = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return [];
+    return blogPosts.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.preview.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.author.name.toLowerCase().includes(q)
+    );
+  }, [searchQuery, blogPosts]);
 
-          {/* Search Bar */}
-          <motion.div
-            className="mt-8 max-w-xl mx-auto "
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-          >
-            <div className="relative group rounded-full">
-              <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-accent transition-colors"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="Search articles, topics, authors..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSearch();
-                }}
-                className="w-full pl-13 pr-5 py-4 bg-surface border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all shadow-sm"
-                style={{ fontSize: 15 }}
-              />
-              {/* <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <button
-                  className="px-4 py-2 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors"
-                  style={{ fontSize: 14, fontWeight: 600 }}
-                >
-                  Search
-                </button>
-              </div> */}
-            </div>
-          </motion.div>
+  // Scroll Reveal Animations via Intersection Observer (Step 13)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
 
-          {/* Trending Tags */}
-          <motion.div
-            className="mt-6 flex flex-wrap items-center justify-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
-            <span
-              className="text-muted-foreground mr-1"
-              style={{ fontSize: 13, fontWeight: 500 }}
-            >
-              Trending:
-            </span>
-            {trendingTags.map((tag) => (
-              <Link
-                key={tag}
-                href="/explore"
-                className="px-3 py-1 bg-surface/80 border border-border text-muted-foreground rounded-full hover:bg-accent/10 hover:text-accent hover:border-accent/30 transition-all"
-                style={{ fontSize: 12, fontWeight: 500 }}
-              >
-                {tag}
-              </Link>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+    const revealElements = document.querySelectorAll(".reveal:not(.visible)");
+    revealElements.forEach((el) => observer.observe(el));
 
-      {/* ═══════════════════════ FEATURED ARTICLES ═══════════════════════ */}
-      <section className="px-4 pb-16 md:pb-20">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            className="flex items-center justify-between mb-8"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-accent/10">
-                <Sparkles size={18} className="text-accent" />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
-                  Featured Articles
-                </h2>
-                <p className="text-muted-foreground" style={{ fontSize: 14 }}>
-                  Hand-picked stories worth your time
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/explore"
-              className="hidden sm:flex items-center gap-1.5 text-accent hover:gap-2.5 transition-all"
-              style={{ fontSize: 14, fontWeight: 600 }}
-            >
-              View all
-              <ArrowRight size={16} />
-            </Link>
-          </motion.div>
+    return () => {
+      observer.disconnect();
+    };
+  }, [filteredPosts, postsLoading]);
 
-          {/* Featured Grid: 1 hero left + 2 stacked right */}
-          {featured.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-              {/* Hero featured card */}
-              <motion.div
-                className="lg:col-span-3"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <FeaturedHeroCard post={featured[0]} />
-              </motion.div>
+  // Extract special articles
+  const featuredPost = useMemo(() => blogPosts[0], [blogPosts]);
+  const editorsPickPost = useMemo(() => blogPosts[2] || blogPosts[0], [blogPosts]);
 
-              {/* Two stacked side cards */}
-              <div className="lg:col-span-2 grid grid-cols-1 gap-5">
-                {featured.slice(1, 3).map((post, i) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 24 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    transition={{ duration: 0.5, delay: 0.2 + i * 0.1 }}
-                  >
-                    <FeaturedSideCard post={post} />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          ) : isLoading ? (
-            <CircularLoading />
-          ) : (
-            <div className="text-center py-20 text-muted-foreground">
-              No featured articles yet.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ═══════════════════════ TRENDING ARTICLES ═══════════════════════ */}
-      <section className="px-4 pb-16 md:pb-20">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            className="flex items-center justify-between mb-8"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-orange-500/10">
-                <TrendingUp size={18} className="text-orange-500" />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
-                  Trending Now
-                </h2>
-                <p className="text-muted-foreground" style={{ fontSize: 14 }}>
-                  What the community is reading right now
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/explore"
-              className="hidden sm:flex items-center gap-1.5 text-accent hover:gap-2.5 transition-all"
-              style={{ fontSize: 14, fontWeight: 600 }}
-            >
-              See all trending
-              <ArrowRight size={16} />
-            </Link>
-          </motion.div>
-
-          {/* Trending Image Overlay Grid */}
-          <TrendingSection posts={trending} />
-        </div>
-      </section>
-
-      {/* ═══════════════════════ LATEST POSTS ═══════════════════════ */}
-      <section className="px-4 pb-20 md:pb-28">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            className="flex items-center justify-between mb-8"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/10">
-                <Clock size={18} className="text-emerald-500" />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
-                  Latest Posts
-                </h2>
-                <p className="text-muted-foreground" style={{ fontSize: 14 }}>
-                  Fresh perspectives, just published
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/explore"
-              className="hidden sm:flex items-center gap-1.5 text-accent hover:gap-2.5 transition-all"
-              style={{ fontSize: 14, fontWeight: 600 }}
-            >
-              Browse all
-              <ArrowRight size={16} />
-            </Link>
-          </motion.div>
-
-          {/* Latest Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {latest.map((post, i) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{
-                  duration: 0.45,
-                  delay: i * 0.08,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-              >
-                <LatestPostCard post={post} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-/* ════════════════════════ FEATURED HERO CARD ════════════════════════ */
-
-function FeaturedHeroCard({ post }: { post: BlogPost }) {
-  const [liked, setLiked] = useState(post.liked);
-  const [likeCount, setLikeCount] = useState(post.likes);
-  const [saved, setSaved] = useState(post.saved);
-
-  return (
-    <Link href={`/post/${post.id}`} className="block h-full group">
-      <div className="relative h-full min-h-[360px] md:min-h-[440px] rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
-        <img
-          src={post.coverImage}
-          alt={post.title}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/5" />
-
-        {/* Top bar */}
-        <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
-          <div className="flex items-center gap-2">
-            <span
-              className="px-3 py-1 bg-accent/80 text-white rounded-full"
-              style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.03em" }}
-            >
-              Featured
-            </span>
-            <span
-              className="px-3 py-1 bg-white/15 backdrop-blur-md text-white rounded-full border border-white/10"
-              style={{ fontSize: 11, fontWeight: 600 }}
-            >
-              {post.category}
-            </span>
-          </div>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setSaved(!saved);
-            }}
-            className={`p-2 rounded-full backdrop-blur-md transition-all ${
-              saved
-                ? "bg-accent/80 text-white"
-                : "bg-white/15 text-white/80 hover:bg-white/25 border border-white/10"
-            }`}
-          >
-            <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock size={13} className="text-white/60" />
-            <span className="text-white/60" style={{ fontSize: 13 }}>
-              {post.readingTime}
-            </span>
-          </div>
-
-          <h2
-            className="text-white mb-2 group-hover:translate-x-1 transition-transform duration-300"
-            style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}
-          >
-            {post.title}
-          </h2>
-          <p
-            className="text-white/70 mb-4 line-clamp-2 max-w-lg"
-            style={{ fontSize: 15, lineHeight: 1.6 }}
-          >
-            {post.preview}
-          </p>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="w-10 h-10 rounded-full object-cover border-2 border-white/20"
-              />
-              <div>
-                <p
-                  className="text-white"
-                  style={{ fontSize: 14, fontWeight: 600 }}
-                >
-                  {post.author.name}
-                </p>
-                <p className="text-white/50" style={{ fontSize: 12 }}>
-                  {post.date}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                setLiked(!liked);
-                setLikeCount((c) => (liked ? c - 1 : c + 1));
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md transition-all ${
-                liked
-                  ? "bg-red-500/20 text-red-400"
-                  : "bg-white/10 text-white/70 hover:bg-white/20"
-              }`}
-              style={{ fontSize: 13 }}
-            >
-              <Heart size={14} fill={liked ? "currentColor" : "none"} />
-              <span>{likeCount}</span>
-            </button>
-          </div>
-        </div>
+  if (postsLoading || !categoriesData) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center pt-28">
+        <CircularLoading />
       </div>
-    </Link>
-  );
-}
+    );
+  }
 
-/* ════════════════════════ FEATURED SIDE CARD ════════════════════════ */
+  if (!featuredPost || !editorsPickPost) {
+    return (
+      <div className="min-h-screen bg-bg flex flex-col items-center justify-center pt-28 gap-4">
+        <i className="fa-solid fa-database text-4xl text-[var(--muted)]"></i>
+        <p className="text-[var(--muted)] text-lg font-body">No articles found in the database.</p>
+      </div>
+    );
+  }
 
-function FeaturedSideCard({ post }: { post: BlogPost }) {
   return (
-    <Link href={`/post/${post.id}`} className="block h-full group">
-      <div className="relative h-full min-h-[200px] rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-xl">
-        <img
-          src={post.coverImage}
-          alt={post.title}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/5" />
+    <div className="min-h-screen bg-bg text-fg font-body">
+      {/* Reading Progress Bar (Step 12.1) */}
+      <div
+        id="reading-progress"
+        aria-hidden="true"
+        className="fixed top-0 left-0 h-[2px] bg-[var(--accent)] z-[10001] transition-[width] duration-75"
+        style={{ width: "0%" }}
+      ></div>
 
-        {/* Category pill */}
-        <div className="absolute top-4 left-4 z-10">
-          <span
-            className="px-3 py-1 bg-white/15 backdrop-blur-md text-white rounded-full border border-white/10"
-            style={{ fontSize: 11, fontWeight: 600 }}
-          >
-            {post.category}
-          </span>
-        </div>
+      {/* Toast Notification Container (Step 12.2) */}
+      <div id="toast" className="toast" aria-live="polite"></div>
 
-        {/* Arrow on hover */}
-        <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-          <div className="p-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/10">
-            <ArrowUpRight size={14} className="text-white" />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Clock size={12} className="text-white/60" />
-            <span className="text-white/60" style={{ fontSize: 12 }}>
-              {post.readingTime}
-            </span>
-          </div>
-          <h3
-            className="text-white mb-1 line-clamp-2 group-hover:translate-x-1 transition-transform duration-300"
-            style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3 }}
-          >
-            {post.title}
-          </h3>
-          <div className="flex items-center gap-2 mt-2">
-            <img
-              src={post.author.avatar}
-              alt={post.author.name}
-              className="w-6 h-6 rounded-full object-cover border border-white/20"
+      {/* Search Overlay (Step 11) */}
+      <div
+        id="searchOverlay"
+        className="fixed inset-0 z-[1001] bg-[rgba(10,10,10,0.92)] backdrop-blur-xl flex items-start justify-center pt-32 px-6 hidden"
+        role="dialog"
+        aria-label="Search"
+      >
+        <div className="w-full max-w-2xl">
+          <div className="relative">
+            <i className="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-[var(--muted)]"></i>
+            <input
+              id="searchInput"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search articles, topics, authors..."
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-14 text-lg text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)]"
             />
-            <span
-              className="text-white/70"
-              style={{ fontSize: 12, fontWeight: 500 }}
-            >
-              {post.author.name}
-            </span>
-            <span className="text-white/40" style={{ fontSize: 11 }}>
-              {post.date}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ════════════════════════ LATEST POST CARD ════════════════════════ */
-
-function LatestPostCard({ post }: { post: BlogPost }) {
-  const [liked, setLiked] = useState(post.liked);
-  const [likeCount, setLikeCount] = useState(post.likes);
-
-  return (
-    <Link href={`/post/${post.id}`} className="block group">
-      <div className="rounded-2xl border border-border overflow-hidden bg-card hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-        {/* Image */}
-        <div className="relative aspect-16/10 overflow-hidden">
-          <img
-            src={post.coverImage}
-            alt={post.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-          />
-          <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
-          {/* Category pill */}
-          <div className="absolute top-3 left-3">
-            <span
-              className="px-2.5 py-1 bg-white/15 backdrop-blur-md text-white rounded-full border border-white/10"
-              style={{ fontSize: 11, fontWeight: 600 }}
-            >
-              {post.category}
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-5 flex flex-col flex-1">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Clock size={12} className="text-muted-foreground" />
-            <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-              {post.readingTime}
-            </span>
-            <span className="text-border mx-1">|</span>
-            <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-              {post.date}
-            </span>
-          </div>
-
-          <h3
-            className="mb-2 line-clamp-2 group-hover:text-accent transition-colors"
-            style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.35 }}
-          >
-            {post.title}
-          </h3>
-
-          <p
-            className="text-muted-foreground mb-4 line-clamp-2 flex-1"
-            style={{ fontSize: 14, lineHeight: 1.6 }}
-          >
-            {post.preview}
-          </p>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-border">
-            <div className="flex items-center gap-2">
-              <img
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="w-7 h-7 rounded-full object-cover"
-              />
-              <span style={{ fontSize: 13, fontWeight: 500 }}>
-                {post.author.name}
-              </span>
-            </div>
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                setLiked(!liked);
-                setLikeCount((c) => (liked ? c - 1 : c + 1));
-              }}
-              className={`flex items-center gap-1 transition-colors ${
-                liked
-                  ? "text-red-500"
-                  : "text-muted-foreground hover:text-red-500"
-              }`}
-              style={{ fontSize: 13 }}
+              id="searchClose"
+              onClick={closeSearchOverlay}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-[var(--border)] flex items-center justify-center cursor-pointer hover:bg-[var(--surface)] transition-colors"
+              aria-label="Close search"
             >
-              <Heart size={14} fill={liked ? "currentColor" : "none"} />
-              <span>{likeCount}</span>
+              <i className="fa-solid fa-xmark text-xs text-[var(--fg)]"></i>
             </button>
           </div>
+          <div
+            id="searchResults"
+            className="mt-4 space-y-2 max-h-[50vh] overflow-y-auto pr-1"
+          >
+            {searchQuery.trim() && searchResults.length === 0 && (
+              <p
+                className="text-sm text-center py-4"
+                style={{ color: "var(--muted)" }}
+              >
+                No results found for "{searchQuery}"
+              </p>
+            )}
+            {searchQuery.trim() &&
+              searchResults.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/post/${post.id}`}
+                  onClick={closeSearchOverlay}
+                  className="flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[var(--surface)] border border-transparent hover:border-[var(--border)]"
+                >
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-heading font-bold text-[var(--fg)]">
+                      {post.title}
+                    </h4>
+                    <p className="text-xs text-[var(--muted)]">
+                      {post.author.name} • {post.readingTime}
+                    </p>
+                  </div>
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider"
+                    style={{
+                      background: "var(--accent-glow)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    {post.category}
+                  </span>
+                </Link>
+              ))}
+          </div>
+          <p className="text-center text-[var(--muted)] text-sm mt-6">
+            Press ESC to close or Ctrl+K to open
+          </p>
         </div>
       </div>
-    </Link>
+
+      {/* ═══════════════════════════ HERO SECTION ═══════════════════════════ */}
+      <header
+        id="hero"
+        className="relative min-h-[95vh] flex items-center pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden"
+      >
+        {/* Background Glows (Step 4.2) */}
+        <div
+          className="absolute top-1/2 right-1/4 w-[600px] h-[600px] rounded-full glow-pulse pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(232,160,35,0.12) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute bottom-10 left-10 w-[450px] h-[450px] rounded-full pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(232,160,35,0.04) 0%, transparent 70%)",
+          }}
+        />
+
+        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: Featured Content (Step 4.1) */}
+            <div className="reveal">
+              <span
+                className="px-3 py-1 bg-[var(--accent-glow)] rounded-full text-xs font-heading font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 mb-6"
+                style={{ color: "var(--accent)" }}
+              >
+                <i className="fa-solid fa-star text-[10px]"></i> Featured Post
+              </span>
+              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-[var(--fg)]">
+                {featuredPost.title}
+              </h1>
+              <p className="font-body text-base sm:text-lg leading-relaxed mb-8 text-[var(--muted)] max-w-xl">
+                {featuredPost.preview}
+              </p>
+
+              {/* Author Info */}
+              <div className="flex items-center gap-3.5 mb-8">
+                <Image
+                  src={featuredPost.author.avatar}
+                  alt={featuredPost.author.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover border border-[var(--border)]"
+                />
+                <div>
+                  <p className="text-sm font-heading font-bold text-[var(--fg)]">
+                    {featuredPost.author.name}
+                  </p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {featuredPost.date} • {featuredPost.readingTime}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href={`/post/${featuredPost.id}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-bold text-sm"
+                >
+                  Read Article{" "}
+                  <i className="fa-solid fa-arrow-right text-xs"></i>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Hero Image (Step 4.1 & 4.3) */}
+            <div
+              className="reveal relative flex justify-center lg:justify-end"
+              style={{ transitionDelay: "0.15s" }}
+            >
+              <div className="hero-float relative w-full max-w-md aspect-4/3 rounded-2xl overflow-visible border border-[var(--border)] bg-[var(--card)] p-2">
+                <Image
+                  src={featuredPost.coverImage}
+                  alt={featuredPost.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover rounded-xl shadow-2xl"
+                  priority
+                />
+
+                {/* Floating Stats Card (Step 4.3) */}
+                <div
+                  className="absolute -bottom-6 -left-6 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 backdrop-blur-md z-20"
+                  style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.4)" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ background: "var(--accent-glow)" }}
+                    >
+                      <i
+                        className="fa-solid fa-fire-flame-curved"
+                        style={{ color: "var(--accent)" }}
+                      ></i>
+                    </div>
+                    <div>
+                      <p
+                        className="font-heading text-lg font-bold"
+                        style={{ color: "var(--fg)" }}
+                      >
+                        2.4K
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>
+                        Active readers
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ═══════════════════════════ TRENDING MARQUEE (Step 5) ═══════════════════════════ */}
+      <div>
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-24 z-20 bg-gradient-to-r from-[#0a0a0a] to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-24 z-20 bg-gradient-to-l from-[#0a0a0a] to-transparent" />
+
+        <section className="border-y border-[var(--border)] py-5 overflow-hidden relative bg-[#0a0a0a] z-10">
+          <div
+            className="marquee-track flex items-center gap-8 whitespace-nowrap"
+            style={{ width: "2000px" }}
+          >
+            {Array(6)
+              .fill([
+                "Design Systems at Scale",
+                "AI & Generative Workflows",
+                "Sustainable Urban Coding",
+                "Modern Variable Typography",
+                "Minimalist Engineering Patterns",
+              ])
+              .flat()
+              .map((item, idx) => (
+                <span
+                  key={idx}
+                  className="flex items-center text-sm font-heading font-medium"
+                  style={{ color: "var(--muted)" }}
+                >
+                  <span
+                    className="font-heading text-sm font-semibold mr-2"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    TRENDING
+                  </span>
+                  <i
+                    className="fa-solid fa-circle text-[4px] mx-2"
+                    style={{ color: "var(--accent)" }}
+                  ></i>
+                  {item}
+                </span>
+              ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ═══════════════════════════ CATEGORIES SECTION (Step 6) ═══════════════════════════ */}
+      <section
+        id="categories"
+        className="py-24 lg:py-32 max-w-7xl mx-auto px-6 relative z-10"
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <div>
+            <h2 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
+              Explore by Category
+            </h2>
+            <p className="font-body text-sm text-[var(--muted)]">
+              Filter posts by your favorite topics
+            </p>
+          </div>
+
+          {/* Pill Button HTML (Step 6.1) */}
+          <div className="flex flex-wrap gap-3" id="categoryContainer">
+            {categoriesList.map((cat) => (
+              <button
+                key={cat.id}
+                className={`cat-pill px-5 py-2 rounded-full text-sm font-heading border border-[var(--border)] transition-all duration-300 font-medium ${
+                  activeCategory === cat.id
+                    ? "active bg-[var(--accent)] text-[#0a0a0a]"
+                    : ""
+                }`}
+                style={{
+                  color: activeCategory === cat.id ? "#0a0a0a" : "var(--muted)",
+                  background:
+                    activeCategory === cat.id ? "var(--accent)" : "transparent",
+                }}
+                onClick={() => setActiveCategory(cat.id)}
+                data-cat={cat.id}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════ BLOG POSTS GRID (Step 7) ═══════════════════════════ */}
+        <div
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          id="postsGrid"
+        >
+          {filteredPosts.map((post, i) => (
+            <article
+              key={post.id}
+              className="post-card reveal rounded-2xl border border-[var(--border)] overflow-hidden flex flex-col"
+              style={{
+                background: "var(--card)",
+                transitionDelay: `${i * 0.08}s`,
+              }}
+            >
+              {/* Image */}
+              <div className="overflow-hidden relative h-[200px]">
+                <img
+                  src={post.coverImage}
+                  alt={post.title}
+                  className="card-img w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Content */}
+              <div className="p-6 sm:p-8 flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider"
+                    style={{
+                      background: "var(--accent-glow)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    {post.category}
+                  </span>
+                  <span
+                    className="text-[11px]"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    {post.readingTime}
+                  </span>
+                </div>
+
+                <h3
+                  className="font-heading text-lg font-bold leading-snug mb-2 line-clamp-2"
+                  style={{ color: "var(--fg)" }}
+                >
+                  {post.title}
+                </h3>
+
+                <p
+                  className="font-body text-sm leading-relaxed mb-4 line-clamp-2"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {post.preview}
+                </p>
+
+                {/* Card Footer */}
+                <div className="mt-auto pt-4 border-t border-[var(--border)] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-7 h-7 rounded-full object-cover border border-[var(--border)]"
+                    />
+                    <div>
+                      <p className="text-xs font-medium text-[var(--fg)]">
+                        {post.author.name}
+                      </p>
+                      <p
+                        className="text-[10px]"
+                        style={{ color: "var(--muted)" }}
+                      >
+                        {post.date}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/post/${post.id}`}
+                    className="text-[var(--accent)] hover:text-[var(--fg)] transition-colors text-xs font-heading font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Read <i className="fa-solid fa-arrow-right text-[10px]"></i>
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ EDITOR'S PICK SECTION (Step 8) ═══════════════════════════ */}
+      <section className="pb-32 lg:pb-40 max-w-7xl mx-auto px-6 relative z-10">
+        <div
+          className="reveal rounded-2xl border border-[var(--border)] overflow-hidden"
+          style={{ background: "var(--card)" }}
+        >
+          <div className="grid lg:grid-cols-5">
+            {/* Image Side (2 cols) */}
+            <div className="lg:col-span-2 overflow-hidden">
+              <Image
+                src={editorsPickPost.coverImage}
+                alt={editorsPickPost.title}
+                width={800}
+                height={600}
+                className="w-full h-64 lg:h-full object-cover hover:scale-105 transition-transform duration-700"
+              />
+            </div>
+            {/* Content Side (3 cols) */}
+            <div className="lg:col-span-3 p-8 lg:p-16 flex flex-col justify-center">
+              <div className="flex items-center gap-3 mb-4">
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-heading font-semibold"
+                  style={{ background: "var(--accent)", color: "#0a0a0a" }}
+                >
+                  <i className="fa-solid fa-star text-[8px]"></i> Editor's Pick
+                </span>
+              </div>
+              <h2
+                className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4"
+                style={{ color: "var(--fg)" }}
+              >
+                {editorsPickPost.title}
+              </h2>
+              <p
+                className="font-body text-base leading-relaxed mb-6"
+                style={{ color: "var(--muted)" }}
+              >
+                {editorsPickPost.preview}
+              </p>
+              {/* Author + Read CTA */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--border)]">
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={editorsPickPost.author.avatar}
+                    alt={editorsPickPost.author.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover border border-[var(--border)]"
+                  />
+                  <div>
+                    <p className="text-sm font-heading font-bold text-[var(--fg)]">
+                      {editorsPickPost.author.name}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {editorsPickPost.date}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/post/${editorsPickPost.id}`}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 font-bold text-sm cursor-pointer"
+                >
+                  Read Full Story{" "}
+                  <i className="fa-solid fa-arrow-right text-xs"></i>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ NEWSLETTER SECTION (Step 9) ═══════════════════════════ */}
+      <section id="newsletter" className="pb-32 lg:pb-40 relative z-10">
+        <div className="max-w-4xl mx-auto px-6 relative z-10">
+          <div className="noise-overlay reveal rounded-3xl border border-[var(--border)] p-10 md:p-20 flex flex-col items-center text-center overflow-hidden bg-[#0d0d0d]">
+            {/* Spotlight Gradient Background */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at center, rgba(232,160,35,0.06) 0%, transparent 70%)",
+              }}
+            />
+
+            <div className="relative z-10 max-w-2xl">
+              <i
+                className="fa-solid fa-envelope-open-text text-4xl mb-6"
+                style={{ color: "var(--accent)" }}
+              ></i>
+              <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4 text-[var(--fg)]">
+                Subscribe to Our Newsletter
+              </h2>
+              <p className="font-body text-sm md:text-base leading-relaxed mb-8 text-[var(--muted)]">
+                Get the latest articles, design trends, and engineering guides
+                delivered straight to your inbox. No spam, unsubscribe anytime.
+              </p>
+              <form
+                id="newsletterForm"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const emailInput = document.getElementById(
+                    "emailInput",
+                  ) as HTMLInputElement;
+                  const email = emailInput?.value.trim();
+                  if (email) {
+                    showToast(`Welcome aboard! We'll send updates to ${email}`);
+                    if (emailInput) emailInput.value = "";
+                  }
+                }}
+                className="w-full flex flex-col sm:flex-row gap-3 max-w-lg mx-auto animate-none"
+              >
+                <input
+                  id="emailInput"
+                  type="email"
+                  placeholder="Enter your email address"
+                  required
+                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl py-3 px-5 text-sm text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)]"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-bold text-sm cursor-pointer whitespace-nowrap"
+                >
+                  Subscribe Now
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer component (Step 10) */}
+      <Footer />
+    </div>
   );
 }
