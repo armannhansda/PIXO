@@ -4,6 +4,7 @@ import "./styles/index.css";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { TRPCProvider } from "@/lib/trpc/provider";
 import { LayoutShell } from "./components/layout-shell";
+import { Analytics } from '@vercel/analytics/next';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({
             <LayoutShell>{children}</LayoutShell>
           </TRPCProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
