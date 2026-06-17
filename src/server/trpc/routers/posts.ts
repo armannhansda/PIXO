@@ -3,7 +3,8 @@ import { and, desc, eq, inArray, isNull, ilike, like, or, sql, type SQL } from "
 import { z } from "zod";
 
 import { generateSlug, generateFallbackSlug } from "@/lib/utils/slug";
-import { categories, posts, postsToCategories, postsToTags, tags, likes, users } from "@/lib/db/schema";
+import { categories, posts, postsToCategories, postsToTags, tags, likes, users, subscribers } from "@/lib/db/schema";
+import { sendNewPostNotificationEmail } from "@/lib/utils/email";
 import {
   assignCategoriesSchema,
   createPostSchema,
@@ -339,6 +340,20 @@ export const postsRouter = createTRPCRouter({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to load created post" });
         }
         
+        // --- Newsletter Notification ---
+        if (input.published) {
+          // Fire and forget email notification
+          ctx.db.select({ email: subscribers.email }).from(subscribers).where(eq(subscribers.isActive, true))
+            .then((activeSubscribers) => {
+              if (activeSubscribers.length > 0) {
+                // Ensure absolute URL (modify based on your deployment environment)
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+                const postUrl = `${baseUrl}/post/${post.id}`;
+                sendNewPostNotificationEmail(post.title, postUrl, activeSubscribers).catch(console.error);
+              }
+            }).catch(console.error);
+        }
+
         return post;
       } catch (error) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create post", cause: error });
@@ -355,6 +370,7 @@ export const postsRouter = createTRPCRouter({
         columns: {
           id: true,
           title: true,
+          published: true,
         },
       });
 
@@ -404,6 +420,19 @@ export const postsRouter = createTRPCRouter({
 
         if (!post) {
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to load updated post" });
+        }
+
+        // --- Newsletter Notification (only if transitioning from draft to published) ---
+        if (input.published && !existing.published) {
+          // Fire and forget email notification
+          ctx.db.select({ email: subscribers.email }).from(subscribers).where(eq(subscribers.isActive, true))
+            .then((activeSubscribers) => {
+              if (activeSubscribers.length > 0) {
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+                const postUrl = `${baseUrl}/post/${post.id}`;
+                sendNewPostNotificationEmail(post.title, postUrl, activeSubscribers).catch(console.error);
+              }
+            }).catch(console.error);
         }
 
         return post;

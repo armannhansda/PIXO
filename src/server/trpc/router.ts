@@ -9,6 +9,7 @@ import { commentsRouter } from "./routers/comments";
 import { followersRouter } from "./routers/followers";
 import { notificationsRouter } from "./routers/notifications";
 import { tagsRouter } from "./routers/tags";
+import { newsletterRouter } from "./routers/newsletter";
 
 export const appRouter = createTRPCRouter({
   posts: postsRouter,
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
   followers: followersRouter,
   notifications: notificationsRouter,
   tags: tagsRouter,
+  newsletter: newsletterRouter,
 });
 
 // export type definition of API

@@ -71,6 +71,13 @@
       "when": 1781605046110,
       "tag": "0009_grey_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781721052457,
+      "tag": "0010_last_rattler",
+      "breakpoints": true
     }
   ]
 }

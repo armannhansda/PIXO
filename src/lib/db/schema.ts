@@ -198,6 +198,14 @@ export const notifications = pgTable('notifications', {
   userReadIdx: index('notifications_user_read_idx').on(table.userId, table.read),
 }));
 
+// ─── Subscribers ─────────────────────────────────────────
+export const subscribers = pgTable('subscribers', {
+  id: serial('id').primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // ═══════════════════════════════════════════════════════════
 // Relations
 // ═══════════════════════════════════════════════════════════

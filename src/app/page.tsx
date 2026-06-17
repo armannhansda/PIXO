@@ -15,6 +15,17 @@ export default function HomePage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("all");
 
+  const subscribeMutation = api.newsletter.subscribe.useMutation({
+    onSuccess: (data) => {
+      showToast(data.message);
+      const emailInput = document.getElementById("emailInput") as HTMLInputElement;
+      if (emailInput) emailInput.value = "";
+    },
+    onError: (error) => {
+      showToast(error.message || "Failed to subscribe. Please try again.");
+    }
+  });
+
   // Connect to tRPC backend and fallback to mock data
   const { data: postsData, isLoading: postsLoading } = api.posts.list.useQuery();
   const { data: categoriesData } = api.categories.list.useQuery();
@@ -419,13 +430,10 @@ export default function HomePage() {
                 id="newsletterForm"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const emailInput = document.getElementById(
-                    "emailInput",
-                  ) as HTMLInputElement;
+                  const emailInput = document.getElementById("emailInput") as HTMLInputElement;
                   const email = emailInput?.value.trim();
                   if (email) {
-                    showToast(`Welcome aboard! We'll send updates to ${email}`);
-                    if (emailInput) emailInput.value = "";
+                    subscribeMutation.mutate({ email });
                   }
                 }}
                 className="w-full flex flex-col sm:flex-row gap-3 max-w-lg mx-auto animate-none"
@@ -435,13 +443,19 @@ export default function HomePage() {
                   type="email"
                   placeholder="Enter your email address"
                   required
-                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl py-3 px-5 text-sm text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)]"
+                  disabled={subscribeMutation.isPending}
+                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl py-3 px-5 text-sm text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-bold text-sm cursor-pointer whitespace-nowrap"
+                  disabled={subscribeMutation.isPending}
+                  className="px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-bold text-sm cursor-pointer whitespace-nowrap disabled:opacity-50 flex items-center justify-center min-w-[140px]"
                 >
-                  Subscribe Now
+                  {subscribeMutation.isPending ? (
+                    <div className="w-5 h-5 border-2 border-[#0a0a0a] border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "Subscribe Now"
+                  )}
                 </button>
               </form>
             </div>

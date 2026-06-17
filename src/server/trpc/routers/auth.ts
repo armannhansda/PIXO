@@ -17,7 +17,7 @@ import { rateLimitMiddleware } from "../middlewares/rateLimit";
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /** Generate a unique username from name or email, retrying if it already exists in the DB */
-async function generateUsername(
+export async function generateUsername(
   db: Context["db"],
   name: string,
   email: string
