@@ -29,7 +29,7 @@ export const metadata = {
     siteName: "PIXO",
     images: [
       {
-        url: "https://pixo.armanx.online",
+        url: "https://pixo.armanx.online/og-image.png",
         width: 1200,
         height: 630,
       },
@@ -42,7 +42,7 @@ export const metadata = {
     title: "PIXO - Share Your Stories",
     description:
       "A modern blogging platform for writers and creators.",
-    images: ["https://pixo.armanx.online"],
+    images: ["https://pixo.armanx.online/og-image.png"],
   },
 };
 
