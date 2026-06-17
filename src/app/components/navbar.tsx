@@ -1,15 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { User, Moon, Sun, Search, Pencil, Menu, X } from "lucide-react";
+import { motion } from "motion/react";
 import { api } from "@/lib/trpc";
+import { mapPostToUI } from "@/lib/utils/map-post";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const { data: postsData } = api.posts.list.useQuery();
+  const blogPosts = useMemo(() => postsData ? postsData.map(mapPostToUI) : [], [postsData]);
+
+  const navLinks = [
+    { label: "Home", path: "/" },
+    { label: "Explore", path: "/explore" },
+    { label: "Categories", path: "/#categories" },
+    { label: "Newsletter", path: "/#newsletter" },
+  ];
+
   const { theme, toggleTheme } = useTheme();
   const goTo = (path: string) => {
     setMobileOpen(false);
@@ -73,7 +90,43 @@ export function Navbar() {
     });
   };
 
-  // Search Overlay Trigger (Step 10)
+  // Global Search logic
+  const closeSearchOverlay = () => {
+    const searchOverlay = document.getElementById("searchOverlay");
+    if (searchOverlay) searchOverlay.classList.add("hidden");
+    setSearchQuery("");
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const searchOverlay = document.getElementById("searchOverlay");
+      const searchInput = document.getElementById("searchInput") as HTMLInputElement;
+
+      if (e.key === "Escape") closeSearchOverlay();
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (searchOverlay) {
+          searchOverlay.classList.remove("hidden");
+          setTimeout(() => searchInput?.focus(), 100);
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return [];
+    return blogPosts.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.preview.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.author.name.toLowerCase().includes(q)
+    );
+  }, [searchQuery, blogPosts]);
+
   const handleSearchToggle = () => {
     const searchOverlay = document.getElementById("searchOverlay");
     const searchInput = document.getElementById("searchInput") as HTMLInputElement;
@@ -94,7 +147,7 @@ export function Navbar() {
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="w-full px-4 md:px-6 2xl:px-8 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
@@ -105,19 +158,33 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => router.push("/#hero")} className="hover:text-[var(--accent)] transition-colors">
-              Home
-            </button>
-            <button onClick={() => router.push("/explore")} className="hover:text-[var(--accent)] transition-colors">
-              Explore
-            </button>
-            <button onClick={() => router.push("/#categories")} className="hover:text-[var(--accent)] transition-colors">
-              Categories
-            </button>
-            <button onClick={() => router.push("/#newsletter")} className="hover:text-[var(--accent)] transition-colors">
-              Newsletter
-            </button>
+          <div 
+            className="hidden md:flex items-center gap-2"
+            onMouseLeave={() => setHoveredPath(null)}
+          >
+            {navLinks.map((item) => {
+              const isActive = pathname === item.path || (item.path.includes("#") && pathname === "/");
+              
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => router.push(item.path)}
+                  onMouseEnter={() => setHoveredPath(item.path)}
+                  className="relative px-4 py-2 rounded-full transition-colors text-sm font-heading font-semibold z-10"
+                >
+                  <span className={`relative z-10 transition-colors ${hoveredPath === item.path || (!hoveredPath && isActive) ? 'text-[#0a0a0a]' : 'text-[var(--muted)] hover:text-[var(--fg)]'}`}>
+                    {item.label}
+                  </span>
+                  {hoveredPath === item.path && (
+                    <motion.div
+                      layoutId="navbar-hover-pill"
+                      className="absolute inset-0 bg-[var(--accent)] rounded-full -z-0"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Right Actions */}
@@ -132,9 +199,9 @@ export function Navbar() {
             </button>
             <button
               onClick={() => goTo(writeHref)}
-              className="btn-accent px-5 py-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 flex items-center gap-2 font-medium"
+              className="flex items-center gap-2 px-5 py-2 rounded-full border border-[var(--border)] text-[var(--fg)] bg-[var(--surface)]/30 hover:bg-[var(--surface)] hover:border-[var(--fg)] transition-all duration-300 font-heading font-semibold text-sm backdrop-blur-md"
             >
-              Write <Pencil size={14} />
+              Write <Pencil size={14} className="opacity-80" />
             </button>
 
             {me ? (
@@ -254,6 +321,79 @@ export function Navbar() {
             Log In
           </button>
         )}
+      </div>
+
+      {/* Global Search Overlay */}
+      <div
+        id="searchOverlay"
+        className="fixed inset-0 z-[1001] bg-[rgba(10,10,10,0.92)] backdrop-blur-xl flex items-start justify-center pt-32 px-6 hidden"
+        role="dialog"
+        aria-label="Search"
+      >
+        <div className="w-full max-w-2xl">
+          <div className="relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--muted)] w-5 h-5" />
+            <input
+              id="searchInput"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search articles, topics, authors..."
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-14 text-lg text-[var(--fg)] font-body focus:ring-2 focus:ring-[var(--accent)]"
+            />
+            <button
+              id="searchClose"
+              onClick={closeSearchOverlay}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-[var(--border)] flex items-center justify-center cursor-pointer hover:bg-[var(--surface)] transition-colors"
+              aria-label="Close search"
+            >
+              <X size={16} className="text-[var(--fg)]" />
+            </button>
+          </div>
+          <div
+            id="searchResults"
+            className="mt-4 space-y-2 max-h-[50vh] overflow-y-auto pr-1"
+          >
+            {searchQuery.trim() && searchResults.length === 0 && (
+              <p
+                className="text-sm text-center py-4 text-[var(--muted)]"
+              >
+                No results found for "{searchQuery}"
+              </p>
+            )}
+            {searchQuery.trim() &&
+              searchResults.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/post/${post.id}`}
+                  onClick={closeSearchOverlay}
+                  className="flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[var(--surface)] border border-transparent hover:border-[var(--border)]"
+                >
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-heading font-bold text-[var(--fg)]">
+                      {post.title}
+                    </h4>
+                    <p className="text-xs text-[var(--muted)]">
+                      {post.author.name} • {post.readingTime}
+                    </p>
+                  </div>
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider bg-[var(--accent-glow)] text-[var(--accent)]"
+                  >
+                    {post.category}
+                  </span>
+                </Link>
+              ))}
+          </div>
+          <p className="text-center text-[var(--muted)] text-sm mt-6">
+            Press ESC to close or Ctrl+K to open
+          </p>
+        </div>
       </div>
     </>
   );

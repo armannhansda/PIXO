@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, Heart, MessageCircle, Bookmark, Twitter, Facebook, Link as LinkIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { ContentRenderer } from "../../components/content-renderer";
 import { CommentsSection } from "../../components/comments-section";
 import { api } from "@/lib/trpc";
@@ -231,29 +232,42 @@ export default function BlogPostPage() {
       ></div>
 
       {/* Cover Image Banner */}
-      <div className="relative h-[55vh] md:h-[65vh]">
-        <img
+      <div className="relative h-[60vh] md:h-[70vh] w-full overflow-hidden">
+        <motion.img
+          initial={{ scale: 1.05 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
           src={post.coverImage}
           alt={post.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 lg:p-24 z-10">
-          <div className="max-w-4xl mx-auto">
-            <span
-              className="inline-block px-3 py-1 rounded-full mb-4 text-xs font-heading font-semibold uppercase tracking-wider"
-              style={{ background: "var(--accent)", color: "#0a0a0a" }}
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)]/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 lg:p-20 z-10">
+          <div className="max-w-4xl mx-auto flex flex-col items-start">
+            <motion.span
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="inline-block px-3 py-1 bg-[var(--accent)] text-[#0a0a0a] rounded-full mb-6 text-xs font-heading font-black tracking-widest uppercase shadow-md"
             >
               {post.category}
-            </span>
-            <h1
-              className="text-white mb-3 font-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight"
+            </motion.span>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-[var(--fg)] mb-4 font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight drop-shadow-sm"
             >
               {post.title}
-            </h1>
-            <p className="text-white/80 font-body text-base sm:text-lg max-w-2xl leading-relaxed">
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-[var(--muted)] font-body text-lg sm:text-xl max-w-3xl leading-relaxed font-medium"
+            >
               {post.subtitle}
-            </p>
+            </motion.p>
           </div>
         </div>
       </div>
@@ -262,43 +276,70 @@ export default function BlogPostPage() {
       <div className="max-w-7xl mx-auto px-6 py-20 lg:py-28">
         <div className="flex flex-col lg:flex-row gap-16 lg:gap-24">
           {/* Main Content */}
-          <article className="flex-1 max-w-3xl reveal">
+          <article className="flex-1 min-w-0 max-w-3xl w-full">
             {/* Author Section */}
-            <div className="flex items-center justify-between pb-10 mb-10 border-b border-[var(--border)]">
-              <div className="flex items-center gap-3.5">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 mb-12 border-b border-[var(--border)]"
+            >
+              <div className="flex items-center gap-4">
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
-                  className="w-12 h-12 rounded-full object-cover border border-[var(--border)]"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-[var(--surface)] shadow-sm"
                 />
                 <div>
                   <Link
                     href={`/profile/${post.author.username}`}
-                    className="font-heading font-bold text-sm text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
+                    className="font-heading font-bold text-base text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
                   >
                     {post.author.name}
                   </Link>
-                  <div
-                    className="flex items-center gap-3 text-[var(--muted)] mt-1"
-                    style={{ fontSize: 13 }}
-                  >
+                  <div className="flex items-center gap-3 text-[var(--muted)] mt-1.5 text-xs font-medium">
                     <span>{post.date}</span>
                     <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <Clock size={13} />
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={12} />
                       {post.readingTime}
                     </span>
                   </div>
                 </div>
               </div>
               
-              <button
-                onClick={() => showToast(`Subscribed to updates from ${post.author.name}`)}
-                className="px-5 py-2 border border-[var(--accent)] text-[var(--accent)] rounded-full hover:bg-[var(--accent)] hover:text-[#0a0a0a] transition-all duration-300 font-heading font-medium text-xs cursor-pointer"
-              >
-                Follow
-              </button>
-            </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleLike}
+                  className={`p-2.5 rounded-full border transition-all duration-300 shadow-sm cursor-pointer ${
+                    localLiked
+                      ? "border-red-500 bg-red-500/10 text-red-500"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-red-500/50 hover:text-red-500"
+                  }`}
+                  title={localLiked ? "Unlike" : "Like"}
+                >
+                  <Heart size={16} fill={localLiked ? "currentColor" : "none"} />
+                </button>
+                <button
+                  onClick={toggleSave}
+                  className={`p-2.5 rounded-full border transition-all duration-300 shadow-sm cursor-pointer ${
+                    localSaved
+                      ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  }`}
+                  title={localSaved ? "Unsave" : "Save"}
+                >
+                  <Bookmark size={16} fill={localSaved ? "currentColor" : "none"} />
+                </button>
+                <div className="w-[1px] h-8 bg-[var(--border)] mx-1" />
+                <button
+                  onClick={() => showToast(`Subscribed to updates from ${post.author.name}`)}
+                  className="px-6 py-2.5 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 font-heading font-bold text-xs shadow-md cursor-pointer"
+                >
+                  Follow
+                </button>
+              </div>
+            </motion.div>
 
             {/* Article Content */}
             <div
@@ -309,43 +350,41 @@ export default function BlogPostPage() {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-between mt-16 pt-10 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between mt-16 pt-8 border-t border-[var(--border)]">
               <div className="flex items-center gap-4">
                 <button
                   onClick={toggleLike}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-full border transition-all duration-300 font-heading font-medium text-xs cursor-pointer ${
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all duration-300 font-heading font-bold text-xs cursor-pointer ${
                     localLiked
-                      ? "border-red-500/30 bg-red-500/10 text-red-500"
-                      : "border-[var(--border)] text-[var(--muted)] hover:border-red-500/30 hover:text-red-500"
+                      ? "border-red-500/50 bg-red-500/10 text-red-500"
+                      : "border-[var(--border)] text-[var(--muted)] hover:border-red-500/50 hover:text-red-500"
                   }`}
                 >
-                  <Heart size={14} className={localLiked ? "fill-current" : ""} />
-                  {localLikeCount}
+                  <Heart size={14} fill={localLiked ? "currentColor" : "none"} />
+                  {localLikeCount} {localLikeCount === 1 ? 'Like' : 'Likes'}
                 </button>
                 <button
                   onClick={() => {
                     const el = document.getElementById("comments");
                     if (el) el.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="flex items-center gap-2 px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors duration-300 font-heading font-medium text-xs cursor-pointer"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--border)] text-[var(--muted)] hover:border-[var(--fg)] hover:text-[var(--fg)] transition-colors duration-300 font-heading font-bold text-xs cursor-pointer"
                 >
                   <MessageCircle size={14} />
                   Comments
                 </button>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleSave}
-                  className={`p-2.5 rounded-full transition-colors duration-300 cursor-pointer ${
-                    localSaved
-                      ? "text-[var(--accent)]"
-                      : "text-[var(--muted)] hover:text-[var(--accent)]"
-                  }`}
-                  aria-label="Save Article"
-                >
-                  <Bookmark size={16} className={localSaved ? "fill-current" : ""} />
-                </button>
-              </div>
+              <button
+                onClick={toggleSave}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all duration-300 font-heading font-bold text-xs cursor-pointer ${
+                  localSaved
+                    ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
+                    : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                }`}
+              >
+                <Bookmark size={14} fill={localSaved ? "currentColor" : "none"} />
+                Save
+              </button>
             </div>
             
             {/* Render Comments Section */}
@@ -353,17 +392,20 @@ export default function BlogPostPage() {
           </article>
 
           {/* Sidebar */}
-          <aside className="w-full lg:w-64 shrink-0 reveal" style={{ transitionDelay: "0.1s" }}>
-            <div className="sticky top-32 space-y-10">
+          <motion.aside 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+            className="w-full lg:w-72 shrink-0"
+          >
+            <div className="sticky top-28 space-y-10 bg-[var(--surface)]/30 backdrop-blur-xl border border-[var(--border)] rounded-3xl p-6 lg:p-8 shadow-sm">
               {/* Table of Contents */}
               {toc.length > 0 && (
                 <div>
-                  <h4
-                    className="mb-4 text-[var(--fg)] uppercase tracking-wider font-heading font-bold text-xs"
-                  >
+                  <h4 className="mb-4 text-[var(--accent)] tracking-widest font-heading font-black uppercase text-[10px]">
                     Table of Contents
                   </h4>
-                  <nav className="space-y-1.5">
+                  <nav className="space-y-1">
                     {toc.map((item, i) => (
                       <button
                         key={i}
@@ -374,7 +416,8 @@ export default function BlogPostPage() {
                             el.scrollIntoView({ behavior: "smooth", block: "start" });
                           }
                         }}
-                        className="block w-full text-left px-3.5 py-2 text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--surface)] rounded-lg transition-colors duration-200 text-xs font-heading font-medium"
+                        className="block w-full text-left px-3 py-2 text-[var(--muted)] hover:text-[var(--fg)] hover:bg-[var(--surface)]/60 rounded-lg transition-colors duration-200 text-sm font-medium line-clamp-1 cursor-pointer"
+                        title={item}
                       >
                         {item}
                       </button>
@@ -385,12 +428,10 @@ export default function BlogPostPage() {
 
               {/* Share links */}
               <div>
-                <h4
-                  className="mb-4 text-[var(--fg)] uppercase tracking-wider font-heading font-bold text-xs"
-                >
-                  Share Story
+                <h4 className="mb-4 text-[var(--accent)] tracking-widest font-heading font-black uppercase text-[10px]">
+                  Share Article
                 </h4>
-                <div className="flex gap-2.5">
+                <div className="flex gap-3">
                   {[
                     { icon: Twitter, label: "Twitter" },
                     { icon: Facebook, label: "Facebook" },
@@ -412,30 +453,17 @@ export default function BlogPostPage() {
                             window.open(url, '_blank');
                           }
                         }}
-                        className="w-9 h-9 bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] rounded-xl text-[var(--muted)] hover:text-[var(--fg)] transition-all duration-300 cursor-pointer flex items-center justify-center"
+                        className="w-10 h-10 bg-[var(--surface)]/50 border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-2xl text-[var(--muted)] transition-all duration-300 cursor-pointer flex items-center justify-center shadow-sm"
                         aria-label={`Share via ${item.label}`}
                       >
-                        <Icon size={14} />
+                        <Icon size={16} />
                       </button>
                     );
                   })}
                 </div>
               </div>
-
-              {/* Save Button */}
-              <button
-                onClick={toggleSave}
-                className={`flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-xl border transition-all duration-300 font-heading font-bold text-xs cursor-pointer ${
-                  localSaved
-                    ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
-                    : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] bg-[var(--surface)]"
-                }`}
-              >
-                <Bookmark size={14} className={localSaved ? "fill-current" : ""} />
-                {localSaved ? "Saved to Bookmarks" : "Bookmark Article"}
-              </button>
             </div>
-          </aside>
+          </motion.aside>
         </div>
       </div>
 

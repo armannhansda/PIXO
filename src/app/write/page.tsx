@@ -3,35 +3,30 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
-  ArrowRight,
-  Upload,
-  X,
+  Image as ImageIcon,
   Bold,
   Italic,
-  Underline,
-  List,
-  Quote,
-  ImageIcon,
-  Link2,
-  Eye,
-  Globe,
-  Lock,
-  Check,
   Code,
   Heading2,
   Heading3,
+  List,
+  Quote,
+  Link2,
   Sigma,
   SquareSigma,
-  SplitSquareHorizontal,
+  X,
+  Globe,
+  Lock,
   Loader2,
+  Check,
+  Eye,
+  Edit3
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ContentRenderer } from "../components/content-renderer";
 import CircularLoading from "../components/circular-loading";
 import { api } from "@/lib/trpc";
 import { useRouter } from "next/navigation";
-
-const steps = ["Post Basics", "Write Content", "Publish Settings"];
 
 /* ── Toolbar formatting helpers ── */
 type InsertAction = {
@@ -44,132 +39,85 @@ type InsertAction = {
 };
 
 const formattingActions: InsertAction[] = [
-  {
-    label: "Bold",
-    icon: Bold,
-    prefix: "**",
-    suffix: "**",
-    placeholder: "bold text",
-  },
-  {
-    label: "Italic",
-    icon: Italic,
-    prefix: "*",
-    suffix: "*",
-    placeholder: "italic text",
-  },
-  {
-    label: "Inline Code",
-    icon: Code,
-    prefix: "`",
-    suffix: "`",
-    placeholder: "code",
-  },
-  {
-    label: "Heading 2",
-    icon: Heading2,
-    prefix: "## ",
-    suffix: "",
-    placeholder: "Heading",
-    block: true,
-  },
-  {
-    label: "Heading 3",
-    icon: Heading3,
-    prefix: "### ",
-    suffix: "",
-    placeholder: "Subheading",
-    block: true,
-  },
-  {
-    label: "Bullet List",
-    icon: List,
-    prefix: "- ",
-    suffix: "",
-    placeholder: "List item",
-    block: true,
-  },
-  {
-    label: "Blockquote",
-    icon: Quote,
-    prefix: "> ",
-    suffix: "",
-    placeholder: "Quote",
-    block: true,
-  },
-  {
-    label: "Link",
-    icon: Link2,
-    prefix: "[",
-    suffix: "](url)",
-    placeholder: "link text",
-  },
-];
-
-const latexActions: InsertAction[] = [
-  {
-    label: "Inline Math",
-    icon: Sigma,
-    prefix: "$",
-    suffix: "$",
-    placeholder: "E = mc^2",
-  },
-  {
-    label: "Block Math",
-    icon: SquareSigma,
-    prefix: "$$\n",
-    suffix: "\n$$",
-    placeholder: "\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}",
-    block: true,
-  },
-];
-
-/* ── LaTeX snippet templates ── */
-const latexSnippets = [
-  { label: "Fraction", tex: "\\frac{a}{b}" },
-  { label: "Square Root", tex: "\\sqrt{x}" },
-  { label: "Summation", tex: "\\sum_{i=1}^{n} x_i" },
-  { label: "Integral", tex: "\\int_{a}^{b} f(x)\\,dx" },
-  { label: "Limit", tex: "\\lim_{x \\to \\infty} f(x)" },
-  { label: "Matrix", tex: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}" },
-  { label: "Greek (alpha)", tex: "\\alpha, \\beta, \\gamma" },
-  { label: "Derivative", tex: "\\frac{d}{dx} f(x)" },
-  { label: "Euler's Identity", tex: "e^{i\\pi} + 1 = 0" },
-  { label: "Binomial", tex: "\\binom{n}{k}" },
+  { label: "Bold", icon: Bold, prefix: "**", suffix: "**", placeholder: "bold text" },
+  { label: "Italic", icon: Italic, prefix: "*", suffix: "*", placeholder: "italic text" },
+  { label: "Inline Code", icon: Code, prefix: "`", suffix: "`", placeholder: "code" },
+  { label: "Heading 2", icon: Heading2, prefix: "## ", suffix: "", placeholder: "Heading", block: true },
+  { label: "Heading 3", icon: Heading3, prefix: "### ", suffix: "", placeholder: "Subheading", block: true },
+  { label: "Bullet List", icon: List, prefix: "- ", suffix: "", placeholder: "List item", block: true },
+  { label: "Blockquote", icon: Quote, prefix: "> ", suffix: "", placeholder: "Quote", block: true },
+  { label: "Link", icon: Link2, prefix: "[", suffix: "](url)", placeholder: "link text" },
+  { label: "Inline Math", icon: Sigma, prefix: "$", suffix: "$", placeholder: "E=mc^2" },
+  { label: "Block Math", icon: SquareSigma, prefix: "$$\n", suffix: "\n$$", placeholder: "\\int e^x dx", block: true },
 ];
 
 export default function WritePage() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
+
+  // Unified Editor State
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [content, setContent] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  // Split pane state
+  const [leftWidth, setLeftWidth] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    const newWidth = (e.clientX / window.innerWidth) * 100;
+    if (newWidth > 20 && newWidth < 80) {
+      setLeftWidth(newWidth);
+    }
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "none";
+    } else {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+    }
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Publish Modal State
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
-  const [showPreview, setShowPreview] = useState(false);
-  const [showSnippets, setShowSnippets] = useState(false);
   const [publishError, setPublishError] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const {
-    data: me,
-    isLoading: meLoading,
-    error: meError,
-  } = api.auth.me.useQuery(undefined, {
-    retry: false,
-  });
-  const { data: categoriesData } = api.categories.list.useQuery();
-
-  const createPost = api.posts.create.useMutation();
-  const getOrCreateTags = api.tags.getOrCreateMany.useMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const subtitleRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textareas
+  const adjustHeight = (el: HTMLTextAreaElement | null) => {
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  };
+
+  const { data: me, isLoading: meLoading, error: meError } = api.auth.me.useQuery(undefined, { retry: false });
+  const { data: categoriesData } = api.categories.list.useQuery();
+  const createPost = api.posts.create.useMutation();
+  const getOrCreateTags = api.tags.getOrCreateMany.useMutation();
 
   useEffect(() => {
     if (!meLoading && (meError || !me)) {
@@ -177,46 +125,38 @@ export default function WritePage() {
     }
   }, [me, meError, meLoading, router]);
 
-  // Map typed tags to category IDs (match by name) — only used if a tag happens to match a category
+  // Match tags to category IDs automatically
   const selectedCategoryIds = (categoriesData ?? [])
-    .filter((c: any) =>
-      tags.some((t) => t.toLowerCase() === c.name.toLowerCase()),
-    )
+    .filter((c: any) => tags.some((t) => t.toLowerCase() === c.name.toLowerCase()))
     .map((c: any) => c.id as number);
 
   const handlePublish = async () => {
     if (!me || isSubmitting) return;
+    if (!title.trim() || !content.trim()) {
+      setPublishError("Title and content are required.");
+      return;
+    }
+
     setIsSubmitting(true);
     setPublishError("");
 
     try {
-      // Get or create tags as actual tags
       let tagIds: number[] = [];
       if (tags.length > 0) {
         const result = await getOrCreateTags.mutateAsync({ names: tags });
         tagIds = result.map((t: any) => t.id);
       }
 
-      // Only assign categories if tags actually match category names
-      const categoryIds =
-        selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined;
-
-      const excerpt = content
-        .slice(0, 200)
-        .replace(/[#*_`>\[\]]/g, "")
-        .trim();
+      const categoryIds = selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined;
+      const excerpt = content.slice(0, 200).replace(/[#*_`>\[\]]/g, "").trim();
 
       await createPost.mutateAsync({
         title,
         subtitle: subtitle || undefined,
-        slug: title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, ""),
+        slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
         content,
         excerpt,
-        coverImage:
-          coverImage && coverImage.startsWith("http") ? coverImage : undefined,
+        coverImage: coverImage && coverImage.startsWith("http") ? coverImage : undefined,
         published: visibility === "public",
         authorId: me.id,
         categoryIds,
@@ -225,9 +165,7 @@ export default function WritePage() {
 
       router.push("/dashboard");
     } catch (err: any) {
-      setPublishError(
-        err?.message || "Failed to publish post. Please try again.",
-      );
+      setPublishError(err?.message || "Failed to publish post. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -237,26 +175,18 @@ export default function WritePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show local preview immediately
     const reader = new FileReader();
     reader.onloadend = () => setCoverImage(reader.result as string);
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary via our API route
     setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.url) {
-        setCoverImage(data.url);
-      } else {
-        setPublishError(data.error || "Image upload failed");
-      }
+      if (data.url) setCoverImage(data.url);
+      else setPublishError(data.error || "Image upload failed");
     } catch {
       setPublishError("Image upload failed. Please try again.");
     } finally {
@@ -264,654 +194,287 @@ export default function WritePage() {
     }
   };
 
-  const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
+  const insertAtCursor = useCallback((action: InsertAction) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = content.slice(start, end);
+    const text = selected || action.placeholder;
+
+    let insert: string;
+    if (action.block && start > 0 && content[start - 1] !== "\n") {
+      insert = "\n" + action.prefix + text + action.suffix;
+    } else {
+      insert = action.prefix + text + action.suffix;
     }
-  };
 
-  const removeTag = (tag: string) => setTags(tags.filter((t) => t !== tag));
+    const newContent = content.slice(0, start) + insert + content.slice(end);
+    setContent(newContent);
 
-  /* ── Insert formatting / LaTeX at cursor ── */
-  const insertAtCursor = useCallback(
-    (action: InsertAction) => {
-      const ta = textareaRef.current;
-      if (!ta) return;
-
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      const selected = content.slice(start, end);
-      const text = selected || action.placeholder;
-
-      let insert: string;
-      if (action.block && start > 0 && content[start - 1] !== "\n") {
-        insert = "\n" + action.prefix + text + action.suffix;
-      } else {
-        insert = action.prefix + text + action.suffix;
-      }
-
-      const newContent = content.slice(0, start) + insert + content.slice(end);
-      setContent(newContent);
-
-      // Restore focus & select the placeholder
-      requestAnimationFrame(() => {
-        ta.focus();
-        const cursorStart =
-          start +
-          (action.block && start > 0 && content[start - 1] !== "\n" ? 1 : 0) +
-          action.prefix.length;
-        ta.setSelectionRange(cursorStart, cursorStart + text.length);
-      });
-    },
-    [content],
-  );
-
-  const insertSnippet = useCallback(
-    (tex: string) => {
-      const action: InsertAction = {
-        label: "",
-        icon: Sigma,
-        prefix: "$",
-        suffix: "$",
-        placeholder: tex,
-      };
-      insertAtCursor(action);
-      setShowSnippets(false);
-    },
-    [insertAtCursor],
-  );
+    requestAnimationFrame(() => {
+      ta.focus();
+      const cursorStart = start + (action.block && start > 0 && content[start - 1] !== "\n" ? 1 : 0) + action.prefix.length;
+      ta.setSelectionRange(cursorStart, cursorStart + text.length);
+      adjustHeight(ta);
+    });
+  }, [content]);
 
   if (meLoading) {
-    return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
-        <CircularLoading />
-      </div>
-    );
+    return <div className="min-h-screen bg-bg flex items-center justify-center"><CircularLoading /></div>;
   }
-
-  if (!me) {
-    return null;
-  }
+  if (!me) return null;
 
   return (
-    <div className="min-h-screen pt-28 pb-12 px-4 bg-bg text-fg font-body">
-      <div className="max-w-3xl mx-auto">
-        {/* Progress Bar */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-3">
-            {steps.map((step, i) => (
-              <div key={step} className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border ${
-                    i <= currentStep
-                      ? "bg-[var(--accent)] text-[#0a0a0a] border-[var(--accent)]"
-                      : "bg-[var(--surface)] text-[var(--muted)] border-[var(--border)]"
-                  }`}
-                  style={{ fontSize: 13, fontWeight: 700 }}
-                >
-                  {i < currentStep ? <Check size={14} /> : i + 1}
+    <div className="min-h-screen bg-bg text-fg font-body">
+      {/* Top Navbar */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-bg/80 backdrop-blur-xl border-b border-[var(--border)] z-50 flex items-center justify-between px-4 lg:px-8">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <span className="font-heading font-medium text-sm text-[var(--muted)]">Draft in {me.name}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPublishModal(true)}
+            disabled={!title.trim() || !content.trim()}
+            className="px-6 py-2 rounded-full font-heading font-bold text-xs bg-[var(--accent)] text-[#0a0a0a] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-opacity-90 transition-all shadow-sm"
+          >
+            Publish
+          </button>
+        </div>
+      </header>
+
+      {/* Main Split Canvas */}
+      <main className="flex flex-col lg:flex-row h-[calc(100vh-64px)] w-full overflow-hidden mt-16 border-t border-[var(--border)] relative">
+        
+        {/* Editor Pane (Left) */}
+        <div 
+          className="h-full overflow-y-auto px-6 lg:px-12 py-10 hide-scrollbar"
+          style={{ width: `calc(${leftWidth}%)`, minWidth: '20%' }}
+        >
+          <div className="max-w-3xl mx-auto">
+            {/* Cover Image Area */}
+            <div className="mb-8">
+              {coverImage ? (
+                <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-[var(--border)] group">
+                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => setCoverImage(null)}
+                    className="absolute top-4 right-4 w-8 h-8 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
-                <span
-                  className={`hidden sm:block font-heading text-sm font-medium ${
-                    i <= currentStep ? "text-[var(--fg)]" : "text-[var(--muted)]"
-                  }`}
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 text-[var(--muted)] hover:text-[var(--fg)] transition-colors font-heading text-sm font-medium"
                 >
-                  {step}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="h-1.5 bg-[var(--surface)] border border-[var(--border)] rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-[var(--accent)]"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+                  <ImageIcon size={16} />
+                  Add a cover image
+                </button>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Title & Subtitle Inputs */}
+            <textarea
+              ref={titleRef}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                adjustHeight(e.target);
+              }}
+              placeholder="Article Title"
+              className="w-full bg-transparent border-none outline-none resize-none font-heading font-black text-4xl md:text-5xl lg:text-6xl text-[var(--fg)] placeholder:text-[var(--muted)]/50 tracking-tight leading-tight mb-4"
+              rows={1}
+            />
+            
+            <textarea
+              ref={subtitleRef}
+              value={subtitle}
+              onChange={(e) => {
+                setSubtitle(e.target.value);
+                adjustHeight(e.target);
+              }}
+              placeholder="Write a brief subtitle (optional)..."
+              className="w-full bg-transparent border-none outline-none resize-none font-body text-lg md:text-xl text-[var(--muted)] placeholder:text-[var(--muted)]/40 leading-relaxed mb-8"
+              rows={1}
+            />
+
+            {/* Floating Toolbar */}
+            <div className="sticky top-0 z-40 mb-6 py-2 px-3 bg-[var(--surface)]/80 backdrop-blur-xl border border-[var(--border)] rounded-2xl flex flex-wrap items-center gap-1 shadow-sm">
+              {formattingActions.map((action, i) => {
+                const Icon = action.icon;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => insertAtCursor(action)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:bg-[var(--border)] hover:text-[var(--fg)] transition-colors"
+                    title={action.label}
+                  >
+                    <Icon size={15} />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Content Editor */}
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => {
+                setContent(e.target.value);
+                adjustHeight(e.target);
+              }}
+              placeholder="Tell your story..."
+              className="w-full bg-transparent border-none outline-none resize-none font-body text-lg text-[var(--fg)] placeholder:text-[var(--muted)]/30 leading-[1.8] min-h-[60vh] pb-32"
             />
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {/* Step 1: Post Basics */}
-          {currentStep === 0 && (
+        {/* Draggable Splitter */}
+        <div
+          className={`hidden lg:block w-1 cursor-col-resize hover:bg-[var(--accent)] transition-colors z-50 ${isDragging ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`}
+          onMouseDown={() => setIsDragging(true)}
+        />
+
+        {/* Live Preview Pane (Right) */}
+        <div 
+          className="hidden lg:block h-full overflow-y-auto px-6 lg:px-12 py-10 bg-[var(--surface)]/20"
+          style={{ width: `calc(${100 - leftWidth}%)`, minWidth: '20%' }}
+        >
+          <div className="max-w-3xl mx-auto prose prose-invert max-w-none prose-amber prose-headings:font-heading pb-32">
+            {coverImage && (
+              <img src={coverImage} alt="Cover Preview" className="w-full aspect-video object-cover rounded-3xl mb-8" />
+            )}
+            <h1 className="font-heading font-black text-4xl md:text-5xl lg:text-6xl mb-4 leading-tight tracking-tight text-[var(--fg)]">{title || "Untitled"}</h1>
+            {subtitle && <p className="text-xl text-[var(--muted)] leading-relaxed mb-8">{subtitle}</p>}
+            <div className="h-px w-full bg-[var(--border)] mb-10" />
+            <ContentRenderer content={content} />
+          </div>
+        </div>
+      </main>
+
+      {/* Publish Settings Modal */}
+      <AnimatePresence>
+        {showPublishModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
             <motion.div
-              key="step-1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPublishModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-[var(--bg)] border border-[var(--border)] rounded-3xl shadow-2xl p-6 lg:p-8 overflow-hidden"
             >
-              <h1 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
-                Post Basics
-              </h1>
-              <p
-                className="text-[var(--muted)] mb-8 font-body"
-                style={{ fontSize: 15 }}
+              <button
+                onClick={() => setShowPublishModal(false)}
+                className="absolute top-6 right-6 text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
               >
-                Set up the foundation for your new post.
-              </p>
+                <X size={20} />
+              </button>
+
+              <h2 className="font-heading text-2xl font-bold mb-6 text-[var(--fg)]">Ready to publish?</h2>
 
               <div className="space-y-6">
                 <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Give your post a title..."
-                    className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
-                    style={{ fontSize: 15 }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Subtitle
-                  </label>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    placeholder="A brief subtitle (optional)..."
-                    className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
-                    style={{ fontSize: 15 }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Cover Image
-                  </label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  {coverImage ? (
-                    <div className="relative rounded-xl overflow-hidden group border border-[var(--border)]">
-                      <img
-                        src={coverImage}
-                        alt="Cover"
-                        className="w-full aspect-[16/9] object-cover"
-                      />
-                      {isUploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <Loader2
-                            size={32}
-                            className="animate-spin text-white"
-                          />
-                        </div>
-                      )}
-                      <button
-                        onClick={() => setCoverImage(null)}
-                        className="absolute top-3 right-3 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full aspect-[16/9] border border-dashed border-[var(--border)] rounded-xl flex flex-col items-center justify-center gap-3 text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer bg-[var(--surface)]"
-                    >
-                      <Upload size={32} />
-                      <span className="text-sm font-heading font-semibold">
-                        Click to upload a cover image
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Category Tags
-                  </label>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="flex items-center gap-1 px-3 py-1 bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/25 rounded-full text-xs font-heading font-bold"
-                      >
-                        {tag}
-                        <button
-                          onClick={() => removeTag(tag)}
-                          className="hover:text-[var(--fg)]"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
+                  <label className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm">Add Tags</label>
+                  <div className="flex items-center gap-2 mb-3">
                     <input
                       type="text"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addTag()}
-                      placeholder="Add a tag..."
-                      className="flex-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)] transition-all"
-                      style={{ fontSize: 14 }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                            setTags([...tags, tagInput.trim()]);
+                            setTagInput("");
+                          }
+                        }
+                      }}
+                      placeholder="e.g. Design, React..."
+                      className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm font-body text-[var(--fg)] focus:border-[var(--accent)] outline-none"
                     />
                     <button
-                      onClick={addTag}
-                      className="px-5 py-2.5 bg-[var(--accent)] text-[#0a0a0a] rounded-xl hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-heading font-bold text-sm"
+                      onClick={() => {
+                        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                          setTags([...tags, tagInput.trim()]);
+                          setTagInput("");
+                        }
+                      }}
+                      className="px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl hover:bg-[var(--border)] transition-colors text-sm font-heading font-semibold text-[var(--fg)]"
                     >
                       Add
                     </button>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 2: Write Content */}
-          {currentStep === 1 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="font-heading text-3xl font-bold text-[var(--fg)]">Write Content</h1>
-                <button
-                  onClick={() => setShowPreview(!showPreview)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                    showPreview
-                      ? "bg-[var(--accent-glow)] text-[var(--accent)] border-[var(--accent)]/30"
-                      : "bg-[var(--surface)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)]"
-                  }`}
-                  style={{ fontSize: 13, fontFamily: "Space Grotesk, sans-serif" }}
-                >
-                  {showPreview ? (
-                    <SplitSquareHorizontal size={15} />
-                  ) : (
-                    <Eye size={15} />
-                  )}
-                  {showPreview ? "Split View" : "Preview"}
-                </button>
-              </div>
-              <p
-                className="text-[var(--muted)] mb-6 font-body text-sm"
-              >
-                Craft your story. Use{" "}
-                <code
-                  className="px-1.5 py-0.5 bg-[var(--surface)] border border-[var(--border)] rounded font-mono text-xs text-[var(--accent)]"
-                >
-                  $...$
-                </code>{" "}
-                for inline math and{" "}
-                <code
-                  className="px-1.5 py-0.5 bg-[var(--surface)] border border-[var(--border)] rounded font-mono text-xs text-[var(--accent)]"
-                >
-                  $$...$$
-                </code>{" "}
-                for block equations.
-              </p>
-
-              {/* Toolbar */}
-              <div className="flex items-center gap-0.5 p-2 bg-[var(--surface)] border border-[var(--border)] rounded-t-xl flex-wrap">
-                {/* Formatting buttons */}
-                {formattingActions.map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={() => insertAtCursor(action)}
-                    title={action.label}
-                    className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
-                  >
-                    <action.icon size={16} />
-                  </button>
-                ))}
-
-                <div className="w-px h-5 bg-[var(--border)] mx-1" />
-
-                {/* LaTeX buttons */}
-                {latexActions.map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={() => insertAtCursor(action)}
-                    title={action.label}
-                    className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--accent)] transition-colors cursor-pointer"
-                  >
-                    <action.icon size={16} />
-                  </button>
-                ))}
-
-                {/* Snippets dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowSnippets(!showSnippets)}
-                    title="Math Snippets"
-                    className={`p-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${
-                      showSnippets
-                        ? "bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/30"
-                        : "hover:bg-[var(--border)] text-[var(--accent)]"
-                    }`}
-                  >
-                    <span style={{ fontFamily: "serif", fontSize: 15, fontWeight: 700 }}>
-                      f(x)
-                    </span>
-                  </button>
-                  <AnimatePresence>
-                    {showSnippets && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-1 w-64 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl z-50 p-2 max-h-72 overflow-y-auto"
-                      >
-                        <p
-                          className="px-2 py-1 text-[var(--muted)] font-heading"
-                          style={{ fontSize: 11, fontWeight: 600 }}
-                        >
-                          MATH SNIPPETS
-                        </p>
-                        {latexSnippets.map((snippet) => (
-                          <button
-                            key={snippet.label}
-                            onClick={() => insertSnippet(snippet.tex)}
-                            className="w-full text-left px-2 py-2 rounded-lg hover:bg-[var(--surface)] transition-colors flex items-center justify-between gap-2 cursor-pointer"
-                          >
-                            <span className="font-body text-xs font-semibold text-[var(--fg)]">
-                              {snippet.label}
-                            </span>
-                            <code
-                              className="text-[var(--accent)] shrink-0 max-w-[130px] truncate text-[10px]"
-                            >
-                              {snippet.tex}
-                            </code>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div className="w-px h-5 bg-[var(--border)] mx-1" />
-
-                <button
-                  className="p-2 rounded-lg hover:bg-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors cursor-pointer"
-                  title="Insert Image"
-                >
-                  <ImageIcon size={16} />
-                </button>
-              </div>
-
-              {/* Editor & Preview */}
-              <div
-                className={`border border-t-0 border-[var(--border)] rounded-b-xl overflow-hidden ${showPreview ? "grid md:grid-cols-2" : ""}`}
-              >
-                {/* Textarea */}
-                <div className={showPreview ? "border-r border-[var(--border)]" : ""}>
-                  <textarea
-                    ref={textareaRef}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={`Start writing your story...\n\nTry some LaTeX:\n  Inline: $E = mc^2$\n  Block:\n  $$\n  \\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n  $$\n\nFormatting:\n  ## Heading\n  **bold** *italic* \`code\`\n  - bullet point\n  > blockquote`}
-                    className="w-full min-h-[400px] px-6 py-5 bg-[var(--bg)] text-[var(--fg)] focus:outline-none resize-none font-mono text-sm border-0"
-                    style={{ lineHeight: 1.8 }}
-                    onKeyDown={(e) => {
-                      // Tab key inserts spaces
-                      if (e.key === "Tab") {
-                        e.preventDefault();
-                        const ta = textareaRef.current!;
-                        const start = ta.selectionStart;
-                        const end = ta.selectionEnd;
-                        setContent(
-                          content.slice(0, start) + "  " + content.slice(end),
-                        );
-                        requestAnimationFrame(() => {
-                          ta.selectionStart = ta.selectionEnd = start + 2;
-                        });
-                      }
-                    }}
-                  />
-                </div>
-
-                {/* Live Preview */}
-                {showPreview && (
-                  <div className="p-6 bg-[var(--bg)] overflow-y-auto max-h-[500px]">
-                    <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-[var(--border)]">
-                      <Eye size={14} className="text-[var(--muted)]" />
-                      <span
-                        className="text-[var(--muted)] font-heading"
-                        style={{ fontSize: 12, fontWeight: 600 }}
-                      >
-                        LIVE PREVIEW
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)] text-xs font-body text-[var(--muted)]">
+                        {tag}
+                        <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="hover:text-[var(--fg)]"><X size={12} /></button>
                       </span>
-                    </div>
-                    <div className="prose prose-invert prose-amber max-w-none prose-headings:font-heading font-body">
-                      <ContentRenderer content={content} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Status bar */}
-              <div
-                className="flex items-center justify-between mt-3 text-[var(--muted)] text-xs font-body"
-              >
-                <div className="flex items-center gap-4">
-                  <span>{wordCount} words</span>
-                  <span>
-                    ~{Math.max(1, Math.ceil(wordCount / 200))} min read
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1">
-                    <Sigma size={13} />
-                    LaTeX supported
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 3: Publish Settings */}
-          {currentStep === 2 && (
-            <motion.div
-              key="step-3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h1 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
-                Publish Settings
-              </h1>
-              <p
-                className="text-[var(--muted)] mb-8 font-body"
-                style={{ fontSize: 15 }}
-              >
-                Review and configure your post before publishing.
-              </p>
-
-              <div className="space-y-6">
-                {/* Visibility */}
-                <div>
-                  <label
-                    className="block mb-3 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Visibility
-                  </label>
-                  <div className="flex gap-3">
-                    {[
-                      {
-                        val: "public" as const,
-                        icon: Globe,
-                        label: "Public",
-                        desc: "Anyone can see this post",
-                      },
-                      {
-                        val: "private" as const,
-                        icon: Lock,
-                        label: "Private",
-                        desc: "Only you can see this post",
-                      },
-                    ].map((opt) => (
-                      <button
-                        key={opt.val}
-                        type="button"
-                        onClick={() => setVisibility(opt.val)}
-                        className={`flex-1 p-4 rounded-xl border-2 transition-all text-left cursor-pointer ${
-                          visibility === opt.val
-                            ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
-                            : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--muted)]/30"
-                        }`}
-                      >
-                        <opt.icon
-                          size={20}
-                          className={
-                            visibility === opt.val
-                              ? "text-[var(--accent)]"
-                              : "text-[var(--muted)]"
-                          }
-                        />
-                        <p
-                          className="mt-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                        >
-                          {opt.label}
-                        </p>
-                        <p
-                          className="text-[var(--muted)] text-xs mt-1 font-body"
-                        >
-                          {opt.desc}
-                        </p>
-                      </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Tags */}
                 <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Tags
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.length > 0 ? (
-                      tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/25 rounded-full text-xs font-heading font-bold"
-                        >
-                          {tag}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-[var(--muted)] text-xs italic font-body">No tags added</span>
-                    )}
+                  <label className="block mb-3 font-heading font-semibold text-[var(--fg)] text-sm">Visibility</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setVisibility("public")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${visibility === "public" ? "border-[var(--accent)] bg-[var(--accent)]/5 text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--fg)] hover:text-[var(--fg)]"}`}
+                    >
+                      <Globe size={24} className="mb-2" />
+                      <span className="font-heading font-semibold text-sm">Public</span>
+                    </button>
+                    <button
+                      onClick={() => setVisibility("private")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${visibility === "private" ? "border-[var(--accent)] bg-[var(--accent)]/5 text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--fg)] hover:text-[var(--fg)]"}`}
+                    >
+                      <Lock size={24} className="mb-2" />
+                      <span className="font-heading font-semibold text-sm">Draft / Private</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Preview Card with rendered content */}
-                <div>
-                  <label
-                    className="block mb-2 font-heading font-semibold text-[var(--fg)] text-sm"
-                  >
-                    Preview
-                  </label>
-                  <div className="p-6 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-                    {coverImage && (
-                      <img
-                        src={coverImage}
-                        alt="Preview"
-                        className="w-full aspect-[16/8] object-cover rounded-lg mb-4 border border-[var(--border)]"
-                      />
-                    )}
-                    <h3 className="font-heading text-xl font-bold text-[var(--fg)]">
-                      {title || "Untitled Post"}
-                    </h3>
-                    {subtitle && (
-                      <p
-                        className="text-[var(--muted)] mt-1 font-body text-sm"
-                      >
-                        {subtitle}
-                      </p>
-                    )}
-                    <div className="mt-3 border-t border-[var(--border)] pt-3">
-                      <div className="prose prose-invert prose-amber max-w-none prose-headings:font-heading font-body text-sm line-clamp-6">
-                        <ContentRenderer
-                          content={content || "No content yet..."}
-                        />
-                      </div>
-                    </div>
+                {publishError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-xs font-medium font-body text-center">
+                    {publishError}
                   </div>
-                </div>
+                )}
+
+                <button
+                  onClick={handlePublish}
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-[#0a0a0a] font-heading font-bold text-sm hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 mt-4 shadow-sm disabled:opacity-50"
+                >
+                  {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                  {isSubmitting ? "Publishing..." : visibility === "public" ? "Publish Now" : "Save as Draft"}
+                </button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-10 pt-6 border-t border-[var(--border)]">
-          <button
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all cursor-pointer ${
-              currentStep === 0
-                ? "text-[var(--muted)]/30 border-[var(--border)] cursor-not-allowed bg-[var(--surface)]"
-                : "text-[var(--fg)] hover:bg-[var(--surface)] border-[var(--border)] bg-transparent"
-            }`}
-            style={{ fontSize: 14, fontWeight: 500 }}
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
-
-          {currentStep < steps.length - 1 ? (
-            <button
-              onClick={() => setCurrentStep(currentStep + 1)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--accent)] text-[#0a0a0a] border border-[var(--accent)] rounded-xl hover:bg-transparent hover:text-[var(--accent)] transition-all font-heading font-bold text-sm cursor-pointer"
-            >
-              Next
-              <ArrowRight size={16} />
-            </button>
-          ) : (
-            <button
-              onClick={handlePublish}
-              disabled={
-                createPost.isPending ||
-                isSubmitting ||
-                isUploading ||
-                !title ||
-                !content
-              }
-              className="flex items-center gap-2 px-8 py-2.5 bg-[var(--accent)] text-[#0a0a0a] border border-[var(--accent)] rounded-xl hover:bg-transparent hover:text-[var(--accent)] transition-all font-heading font-bold text-sm cursor-pointer disabled:opacity-50"
-            >
-              {createPost.isPending || isSubmitting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Eye size={16} />
-              )}
-              {createPost.isPending || isSubmitting
-                ? "Publishing..."
-                : "Publish Post"}
-            </button>
-          )}
-        </div>
-        {publishError && (
-          <p className="text-red-500 text-center mt-2 font-body text-xs">
-            {publishError}
-          </p>
+          </div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

@@ -153,179 +153,136 @@ export default function PublicProfilePage() {
   const isFollowing = followStatus?.following ?? false;
 
   return (
-    <div className="min-h-screen bg-bg text-fg font-body pt-16 pb-20">
+    <div className="min-h-screen bg-bg text-fg font-body pb-20">
       {/* Cover Image Banner */}
-      <div className="relative h-48 md:h-64 border-b border-[var(--border)] overflow-hidden">
+      <div className="relative h-64 md:h-80 w-full overflow-hidden">
         {bannerImage ? (
-          <img
+          <motion.img
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
             src={bannerImage}
             alt="Cover"
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-[var(--surface)]" />
+          <div className="w-full h-full bg-gradient-to-br from-[var(--surface)] to-[var(--bg)]" />
         )}
-        <div className="absolute inset-0 bg-black/25" />
+        {/* Gradient overlays to blend into the background */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6">
-        {/* ── Mobile Layout ── */}
-        <div className="md:hidden -mt-12 relative z-10">
-          <div className="flex items-end justify-between">
+      <div className="w-full px-4 md:px-6 2xl:px-8">
+        {/* ── Unified Profile Layout ── */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="relative z-10 -mt-16 md:-mt-24 bg-[var(--surface)]/40 backdrop-blur-2xl border border-[var(--border)] rounded-3xl p-6 md:p-10 shadow-lg flex flex-col md:flex-row gap-8 items-start md:items-center"
+        >
+          {/* Avatar */}
+          <div className="relative shrink-0 -mt-16 md:-mt-20 group">
             {author.avatar ? (
               <img
                 src={author.avatar}
                 alt={author.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-[var(--bg)] shadow-xl"
+                className="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-[var(--surface)] shadow-md transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-[var(--accent)] border-4 border-[var(--bg)] shadow-xl flex items-center justify-center">
-                <span className="text-[#0a0a0a] text-3xl font-bold">
+              <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[var(--accent)] border-4 border-[var(--surface)] shadow-md flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                <span className="text-[#0a0a0a] text-4xl md:text-5xl font-black">
                   {author.name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
               </div>
             )}
-            <button
-              onClick={handleFollowToggle}
-              disabled={toggleFollow.isPending}
-              className={`px-4 py-2 rounded-full border transition-all duration-300 text-xs font-heading font-semibold shadow-md cursor-pointer ${
-                isFollowing
-                  ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
-                  : "border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)]"
-              }`}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </button>
           </div>
 
-          <div className="mt-4">
-            <h1 className="text-xl font-heading font-bold text-[var(--fg)]">{author.name}</h1>
-            {author.username && (
-              <p className="text-[var(--muted)] text-sm">@{author.username}</p>
-            )}
+          {/* Profile Info */}
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-[var(--fg)]">{author.name}</h1>
+                {author.username && (
+                  <p className="text-[var(--accent)] text-sm font-medium mt-1">@{author.username}</p>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={toggleFollow.isPending}
+                  className={`px-5 py-2 rounded-full border transition-all duration-300 text-xs md:text-sm font-heading font-semibold shadow-md cursor-pointer flex items-center justify-center gap-2 ${
+                    isFollowing
+                      ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
+                      : "border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)]"
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <i className="fa-solid fa-user-check text-xs"></i>
+                      Following
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-user-plus text-xs"></i>
+                      Follow
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             {author.bio && (
-              <p className="text-[var(--muted)] text-sm mt-3 leading-relaxed">
+              <p className="text-[var(--muted)] text-sm md:text-base mt-4 max-w-3xl leading-relaxed">
                 {author.bio}
               </p>
             )}
-            <div className="flex items-center gap-4 mt-3 text-[var(--muted)] text-xs">
+            
+            <div className="flex flex-wrap items-center gap-4 md:gap-6 mt-4 text-[var(--muted)] text-xs md:text-sm font-medium">
               {author.location && (
-                <span className="flex items-center gap-1">
-                  <i className="fa-solid fa-map-pin text-[10px]"></i>
+                <span className="flex items-center gap-1.5 md:gap-2">
+                  <i className="fa-solid fa-map-pin text-[10px] md:text-xs"></i>
                   {author.location}
                 </span>
               )}
               {author.joinDate && (
-                <span className="flex items-center gap-1">
-                  <i className="fa-solid fa-calendar text-[10px]"></i>
+                <span className="flex items-center gap-1.5 md:gap-2">
+                  <i className="fa-solid fa-calendar text-[10px] md:text-xs"></i>
                   Joined {author.joinDate}
                 </span>
               )}
             </div>
-            <div className="flex gap-5 mt-4">
+            
+            {/* Minimal Inline Metrics */}
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4 mt-6 pt-6 border-t border-[var(--border)]/50 w-full">
               {[
                 { label: "Posts", value: author.posts },
                 { label: "Followers", value: author.followers },
                 { label: "Following", value: author.following },
               ].map((stat) => (
-                <div key={stat.label} className="text-sm text-[var(--fg)]">
-                  <span className="font-bold">{stat.value}</span>{" "}
-                  <span className="text-[var(--muted)]">{stat.label}</span>
+                <div key={stat.label} className="flex items-baseline gap-2">
+                  <span className="text-lg md:text-xl font-heading font-bold text-[var(--fg)]">{stat.value.toLocaleString()}</span>
+                  <span className="text-[10px] md:text-xs text-[var(--muted)] uppercase tracking-wider font-semibold">{stat.label}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-
-        {/* ── Desktop Layout ── */}
-        <div className="hidden md:flex items-start gap-6 -mt-16 relative z-10">
-          {author.avatar ? (
-            <img
-              src={author.avatar}
-              alt={author.name}
-              className="w-32 h-32 rounded-full object-cover border-4 border-[var(--bg)] shadow-xl shrink-0"
-            />
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-[var(--accent)] border-4 border-[var(--bg)] shadow-xl flex items-center justify-center shrink-0">
-              <span className="text-[#0a0a0a] text-4xl font-bold">
-                {author.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-            </div>
-          )}
-
-          <div className="pt-20 flex-1 min-w-0">
-            <div>
-              <h1 className="text-3xl font-heading font-bold text-[var(--fg)]">{author.name}</h1>
-              {author.username && (
-                <p className="text-[var(--muted)] text-sm">@{author.username}</p>
-              )}
-              {author.bio && (
-                <p className="text-[var(--muted)] text-sm mt-3 max-w-xl leading-relaxed">
-                  {author.bio}
-                </p>
-              )}
-              <div className="flex items-center gap-4 mt-3 text-[var(--muted)] text-xs">
-                {author.location && (
-                  <span className="flex items-center gap-1">
-                    <i className="fa-solid fa-map-pin text-[11px]"></i>
-                    {author.location}
-                  </span>
-                )}
-                {author.joinDate && (
-                  <span className="flex items-center gap-1">
-                    <i className="fa-solid fa-calendar text-[11px]"></i>
-                    Joined {author.joinDate}
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-6 mt-4">
-                {[
-                  { label: "Posts", value: author.posts },
-                  { label: "Followers", value: author.followers },
-                  { label: "Following", value: author.following },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-sm text-[var(--fg)]">
-                    <span className="font-bold text-base">{stat.value}</span>{" "}
-                    <span className="text-[var(--muted)]">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-20 shrink-0">
-            <button
-              onClick={handleFollowToggle}
-              disabled={toggleFollow.isPending}
-              className={`px-5 py-2.5 rounded-full border transition-all duration-300 text-xs font-heading font-semibold shadow-md cursor-pointer ${
-                isFollowing
-                  ? "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]"
-                  : "border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)]"
-              }`}
-            >
-              {isFollowing ? (
-                <>
-                  <i className="fa-solid fa-user-check mr-1.5 text-xs"></i>
-                  Following
-                </>
-              ) : (
-                <>
-                  <i className="fa-solid fa-user-plus mr-1.5 text-xs"></i>
-                  Follow
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Tabs */}
-        <div className="mt-10 border-b border-[var(--border)]">
-          <div className="flex gap-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-12 mb-8 flex justify-center md:justify-start border-b border-[var(--border)]"
+        >
+          <div className="flex gap-8 px-2">
             {publicTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-6 py-3 transition-colors text-sm font-heading font-medium cursor-pointer ${
+                className={`relative pb-4 transition-colors text-sm font-heading font-bold cursor-pointer ${
                   activeTab === tab
                     ? "text-[var(--fg)]"
                     : "text-[var(--muted)] hover:text-[var(--fg)]"
@@ -335,18 +292,19 @@ export default function PublicProfilePage() {
                 {activeTab === tab && (
                   <motion.div
                     layoutId="public-profile-tab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)] rounded-full"
+                    className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[var(--accent)] rounded-t-full"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Tab Content */}
         <div className="py-8">
           {activeTab === "Posts" && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
               {postsLoading ? (
                 <div className="col-span-full py-12 flex justify-center"><CircularLoading /></div>
               ) : userPosts.length > 0 ? (

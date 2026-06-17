@@ -27,7 +27,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-[var(--border)] pt-16 pb-8 mt-auto w-full bg-[#0a0a0a]">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="w-full px-4 md:px-6 2xl:px-8">
         {/* Main Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
           {/* Brand Column */}

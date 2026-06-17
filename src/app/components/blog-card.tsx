@@ -27,12 +27,14 @@ export function BlogCard({
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setLiked(!liked);
     setLikeCount((c) => (liked ? c - 1 : c + 1));
   };
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setSaved(!saved);
   };
 
@@ -43,41 +45,35 @@ export function BlogCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Link href={`/post/${post.id}`} className="block group">
-          <div className="grid md:grid-cols-2 gap-6 bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
-            <div className="aspect-16/10 md:aspect-auto overflow-hidden">
+        <div
+          onClick={() => router.push(`/post/${post.id}`)}
+          className="block group cursor-pointer"
+        >
+          <div className="grid md:grid-cols-2 gap-6 md:gap-10 bg-card/40 backdrop-blur-xl rounded-3xl border border-border/50 overflow-hidden hover:border-border hover:bg-card/60 transition-all duration-500 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="aspect-16/10 md:aspect-auto overflow-hidden relative">
               <Image
                 src={optimizeImage(post.coverImage)}
                 alt={post.title}
                 width={800}
                 height={450}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </div>
-            <div className="p-6 md:p-8 flex flex-col justify-center">
-              <span
-                className="inline-block px-3 py-1 bg-accent/10 text-accent rounded-full mb-4 w-fit"
-                style={{ fontSize: 12, fontWeight: 600 }}
-              >
+            <div className="p-6 md:p-10 flex flex-col justify-center">
+              <span className="inline-block text-accent font-semibold tracking-wider uppercase text-[10px] mb-4 w-fit">
                 {post.category}
               </span>
-              <h2
-                className="mb-2 group-hover:text-accent transition-colors"
-                style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.3 }}
-              >
+              <h2 className="text-2xl md:text-3xl font-heading font-black mb-4 group-hover:text-accent transition-colors leading-tight text-foreground">
                 {post.title}
               </h2>
-              <p
-                className="text-muted-foreground mb-6"
-                style={{ fontSize: 16, lineHeight: 1.6 }}
-              >
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed mb-8 line-clamp-3">
                 {post.preview}
               </p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {post.author.username || post.author.id ? (
                     <Link
-                      href={`/profile/${post.author.username}`}
+                      href={`/profile/${post.author.username || post.author.id}`}
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
@@ -97,16 +93,13 @@ export function BlogCard({
                         </div>
                       )}
                       <div>
-                        <p style={{ fontSize: 14, fontWeight: 600 }}>
+                        <p className="text-sm font-semibold text-foreground">
                           {post.author.name}
                         </p>
-                        <div
-                          className="flex items-center gap-2 text-muted-foreground"
-                          style={{ fontSize: 12 }}
-                        >
+                        <div className="flex items-center gap-2 text-muted-foreground text-[11px] font-medium mt-0.5">
                           <span>{post.date}</span>
                           <span>·</span>
-                          <Clock size={12} />
+                          <Clock size={10} />
                           <span>{post.readingTime}</span>
                         </div>
                       </div>
@@ -127,16 +120,13 @@ export function BlogCard({
                         </div>
                       )}
                       <div>
-                        <p style={{ fontSize: 14, fontWeight: 600 }}>
+                        <p className="text-sm font-semibold text-foreground">
                           {post.author.name}
                         </p>
-                        <div
-                          className="flex items-center gap-2 text-muted-foreground"
-                          style={{ fontSize: 12 }}
-                        >
+                        <div className="flex items-center gap-2 text-muted-foreground text-[11px] font-medium mt-0.5">
                           <span>{post.date}</span>
                           <span>·</span>
-                          <Clock size={12} />
+                          <Clock size={10} />
                           <span>{post.readingTime}</span>
                         </div>
                       </div>
@@ -163,7 +153,7 @@ export function BlogCard({
               </div>
             </div>
           </div>
-        </Link>
+        </div>
       </motion.div>
     );
   }
@@ -174,13 +164,17 @@ export function BlogCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Link href={`/post/${post.id}`} className="block group">
-        <div className="relative bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <div
+        onClick={() => router.push(`/post/${post.id}`)}
+        className="block group cursor-pointer"
+      >
+        <div className="relative bg-card/30 backdrop-blur-sm rounded-3xl border border-border/40 overflow-hidden hover:border-border hover:bg-card/50 transition-all duration-500">
           {showEditButton && (
             <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
               <button
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   router.push(`/write/edit/${post.id}`);
                 }}
                 className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors text-muted-foreground hover:text-foreground shadow-sm"
@@ -191,6 +185,7 @@ export function BlogCard({
               <button
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   onDelete?.(post.id);
                 }}
                 className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 transition-colors text-red-500 shadow-sm"
@@ -207,23 +202,14 @@ export function BlogCard({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           </div>
-          <div className="p-5">
-            <span
-              className="inline-block px-2.5 py-0.5 bg-accent/10 text-accent rounded-full mb-3"
-              style={{ fontSize: 11, fontWeight: 600 }}
-            >
+          <div className="p-6 md:p-8">
+            <span className="inline-block text-accent font-semibold tracking-wider uppercase text-[10px] mb-3 w-fit">
               {post.category}
             </span>
-            <h3
-              className="mb-2 group-hover:text-accent transition-colors"
-              style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.4 }}
-            >
+            <h3 className="text-xl font-heading font-bold mb-3 group-hover:text-accent transition-colors leading-snug text-foreground line-clamp-2">
               {post.title}
             </h3>
-            <p
-              className="text-muted-foreground mb-4 line-clamp-2"
-              style={{ fontSize: 14, lineHeight: 1.6 }}
-            >
+            <p className="text-muted-foreground text-sm leading-relaxed mb-6 line-clamp-2">
               {post.preview}
             </p>
             <div className="flex items-center justify-between">
@@ -256,19 +242,13 @@ export function BlogCard({
                     </span>
                   </div>
                 )}
-                <span
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  style={{ fontSize: 13, fontWeight: 500 }}
-                >
+                <span className="text-muted-foreground hover:text-foreground transition-colors text-xs font-semibold">
                   {post.author.name}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center gap-1 text-muted-foreground"
-                  style={{ fontSize: 12 }}
-                >
-                  <Clock size={12} />
+                <div className="flex items-center gap-1 text-muted-foreground text-[11px] font-medium">
+                  <Clock size={10} />
                   <span>{post.readingTime}</span>
                 </div>
                 <button
@@ -283,7 +263,7 @@ export function BlogCard({
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

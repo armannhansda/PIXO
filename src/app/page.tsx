@@ -3,14 +3,17 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import CircularLoading from "./components/circular-loading";
 import { Footer } from "./components/footer";
 import { api } from "@/lib/trpc";
 import { mapPostToUI } from "@/lib/utils/map-post";
+import { BlogCard } from "./components/blog-card";
+import { motion } from "motion/react";
 
 export default function HomePage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Connect to tRPC backend and fallback to mock data
   const { data: postsData, isLoading: postsLoading } = api.posts.list.useQuery();
@@ -78,47 +81,7 @@ export default function HomePage() {
     }
   };
 
-  const closeSearchOverlay = () => {
-    const searchOverlay = document.getElementById("searchOverlay");
-    if (searchOverlay) {
-      searchOverlay.classList.add("hidden");
-    }
-    setSearchQuery("");
-  };
 
-  // Keyboard shortcut listener for Ctrl+K search overlay
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const searchOverlay = document.getElementById("searchOverlay");
-      const searchInput = document.getElementById("searchInput") as HTMLInputElement;
-
-      if (e.key === "Escape") {
-        closeSearchOverlay();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        if (searchOverlay) {
-          searchOverlay.classList.remove("hidden");
-          setTimeout(() => searchInput?.focus(), 100);
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Search Results calculations
-  const searchResults = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return [];
-    return blogPosts.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.preview.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.author.name.toLowerCase().includes(q)
-    );
-  }, [searchQuery, blogPosts]);
 
   // Scroll Reveal Animations via Intersection Observer (Step 13)
   useEffect(() => {
@@ -176,193 +139,81 @@ export default function HomePage() {
       {/* Toast Notification Container (Step 12.2) */}
       <div id="toast" className="toast" aria-live="polite"></div>
 
-      {/* Search Overlay (Step 11) */}
-      <div
-        id="searchOverlay"
-        className="fixed inset-0 z-[1001] bg-[rgba(10,10,10,0.92)] backdrop-blur-xl flex items-start justify-center pt-32 px-6 hidden"
-        role="dialog"
-        aria-label="Search"
-      >
-        <div className="w-full max-w-2xl">
-          <div className="relative">
-            <i className="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-[var(--muted)]"></i>
-            <input
-              id="searchInput"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search articles, topics, authors..."
-              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-14 text-lg text-[var(--fg)] font-body email-input focus:ring-2 focus:ring-[var(--accent)]"
-            />
-            <button
-              id="searchClose"
-              onClick={closeSearchOverlay}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-[var(--border)] flex items-center justify-center cursor-pointer hover:bg-[var(--surface)] transition-colors"
-              aria-label="Close search"
-            >
-              <i className="fa-solid fa-xmark text-xs text-[var(--fg)]"></i>
-            </button>
-          </div>
-          <div
-            id="searchResults"
-            className="mt-4 space-y-2 max-h-[50vh] overflow-y-auto pr-1"
-          >
-            {searchQuery.trim() && searchResults.length === 0 && (
-              <p
-                className="text-sm text-center py-4"
-                style={{ color: "var(--muted)" }}
-              >
-                No results found for "{searchQuery}"
-              </p>
-            )}
-            {searchQuery.trim() &&
-              searchResults.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/post/${post.id}`}
-                  onClick={closeSearchOverlay}
-                  className="flex items-center gap-4 p-4 rounded-xl transition-colors hover:bg-[var(--surface)] border border-transparent hover:border-[var(--border)]"
-                >
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <h4 className="text-sm font-heading font-bold text-[var(--fg)]">
-                      {post.title}
-                    </h4>
-                    <p className="text-xs text-[var(--muted)]">
-                      {post.author.name} • {post.readingTime}
-                    </p>
-                  </div>
-                  <span
-                    className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider"
-                    style={{
-                      background: "var(--accent-glow)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {post.category}
-                  </span>
-                </Link>
-              ))}
-          </div>
-          <p className="text-center text-[var(--muted)] text-sm mt-6">
-            Press ESC to close or Ctrl+K to open
-          </p>
-        </div>
-      </div>
 
       {/* ═══════════════════════════ HERO SECTION ═══════════════════════════ */}
       <header
         id="hero"
-        className="relative min-h-[95vh] flex items-center pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden"
+        className="relative pt-32 pb-20 lg:pt-36 lg:pb-24 overflow-hidden"
       >
-        {/* Background Glows (Step 4.2) */}
-        <div
-          className="absolute top-1/2 right-1/4 w-[600px] h-[600px] rounded-full glow-pulse pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(232,160,35,0.12) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          className="absolute bottom-10 left-10 w-[450px] h-[450px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(232,160,35,0.04) 0%, transparent 70%)",
-          }}
-        />
-
-        <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: Featured Content (Step 4.1) */}
-            <div className="reveal">
-              <span
-                className="px-3 py-1 bg-[var(--accent-glow)] rounded-full text-xs font-heading font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 mb-6"
-                style={{ color: "var(--accent)" }}
-              >
-                <i className="fa-solid fa-star text-[10px]"></i> Featured Post
-              </span>
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-[var(--fg)]">
-                {featuredPost.title}
-              </h1>
-              <p className="font-body text-base sm:text-lg leading-relaxed mb-8 text-[var(--muted)] max-w-xl">
-                {featuredPost.preview}
-              </p>
-
-              {/* Author Info */}
-              <div className="flex items-center gap-3.5 mb-8">
-                <Image
-                  src={featuredPost.author.avatar}
-                  alt={featuredPost.author.name}
-                  width={48}
-                  height={48}
-                  className="rounded-full object-cover border border-[var(--border)]"
-                />
-                <div>
-                  <p className="text-sm font-heading font-bold text-[var(--fg)]">
-                    {featuredPost.author.name}
-                  </p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {featuredPost.date} • {featuredPost.readingTime}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href={`/post/${featuredPost.id}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all duration-300 font-bold text-sm"
-                >
-                  Read Article{" "}
-                  <i className="fa-solid fa-arrow-right text-xs"></i>
-                </Link>
-              </div>
+        <div className="w-full px-4 md:px-6 2xl:px-8 relative z-10">
+          <div 
+            onClick={() => router.push(`/post/${featuredPost.id}`)}
+            className="group relative rounded-[2rem] lg:rounded-[3rem] overflow-hidden cursor-pointer bg-[#050505] border border-[var(--border)] shadow-2xl"
+          >
+            {/* Background Image with Parallax/Scale Effect */}
+            <div className="absolute inset-0 z-0">
+              <Image
+                src={featuredPost.coverImage}
+                alt={featuredPost.title}
+                fill
+                priority
+                className="object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000 ease-out"
+                sizes="100vw"
+              />
+              {/* Complex Gradient Overlays for readability & drama */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/70 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/95 via-[#050505]/50 to-transparent" />
             </div>
 
-            {/* Right: Hero Image (Step 4.1 & 4.3) */}
-            <div
-              className="reveal relative flex justify-center lg:justify-end"
-              style={{ transitionDelay: "0.15s" }}
-            >
-              <div className="hero-float relative w-full max-w-md aspect-4/3 rounded-2xl overflow-visible border border-[var(--border)] bg-[var(--card)] p-2">
-                <Image
-                  src={featuredPost.coverImage}
-                  alt={featuredPost.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover rounded-xl shadow-2xl"
-                  priority
-                />
+            {/* Content Container */}
+            <div className="relative z-10 flex flex-col justify-end min-h-[65vh] lg:min-h-[80vh] p-8 md:p-12 lg:p-20">
+              <div className="max-w-4xl reveal">
+                <div className="flex flex-wrap items-center gap-3 mb-6">
+                  <span
+                    className="px-4 py-1.5 bg-[var(--accent)]/10 backdrop-blur-md border border-[var(--accent)]/20 rounded-full text-xs font-heading font-bold uppercase tracking-widest inline-flex items-center gap-2"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    <i className="fa-solid fa-bolt text-[10px]"></i> Featured Story
+                  </span>
+                  <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-xs font-heading font-semibold uppercase tracking-widest text-white">
+                    {featuredPost.category}
+                  </span>
+                </div>
+                
+                <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] mb-6 text-white group-hover:text-[var(--accent)] transition-colors duration-500">
+                  {featuredPost.title}
+                </h1>
+                
+                <p className="font-body text-lg sm:text-xl lg:text-2xl leading-relaxed mb-10 text-white/70 max-w-3xl line-clamp-2 md:line-clamp-none">
+                  {featuredPost.preview}
+                </p>
 
-                {/* Floating Stats Card (Step 4.3) */}
-                <div
-                  className="absolute -bottom-6 -left-6 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 backdrop-blur-md z-20"
-                  style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.4)" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ background: "var(--accent-glow)" }}
-                    >
-                      <i
-                        className="fa-solid fa-fire-flame-curved"
-                        style={{ color: "var(--accent)" }}
-                      ></i>
-                    </div>
+                {/* Author & Read CTA Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-white/10">
+                  <Link 
+                    href={`/profile/${featuredPost.author.username || featuredPost.author.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-4 group/author hover:bg-white/10 p-2 pr-6 rounded-full transition-all duration-300 w-fit border border-transparent hover:border-white/10 backdrop-blur-sm"
+                  >
+                    <Image
+                      src={featuredPost.author.avatar}
+                      alt={featuredPost.author.name}
+                      width={56}
+                      height={56}
+                      className="rounded-full object-cover border-2 border-[var(--accent)]"
+                    />
                     <div>
-                      <p
-                        className="font-heading text-lg font-bold"
-                        style={{ color: "var(--fg)" }}
-                      >
-                        2.4K
+                      <p className="text-base font-heading font-bold text-white group-hover/author:text-[var(--accent)] transition-colors">
+                        {featuredPost.author.name}
                       </p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>
-                        Active readers
+                      <p className="text-sm text-white/60 flex items-center gap-2 mt-0.5 font-medium">
+                        {featuredPost.date} <span className="w-1 h-1 rounded-full bg-white/30"></span> {featuredPost.readingTime}
                       </p>
                     </div>
+                  </Link>
+
+                  <div className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[var(--accent)] text-[#0a0a0a] font-heading font-bold text-base transition-transform duration-300 group-hover:scale-105 group-hover:shadow-[0_0_30px_rgba(232,160,35,0.4)]">
+                    Read Article <i className="fa-solid fa-arrow-right"></i>
                   </div>
                 </div>
               </div>
@@ -372,81 +223,72 @@ export default function HomePage() {
       </header>
 
       {/* ═══════════════════════════ TRENDING MARQUEE (Step 5) ═══════════════════════════ */}
-      <div>
-        <div className="pointer-events-none absolute left-0 top-0 h-full w-24 z-20 bg-gradient-to-r from-[#0a0a0a] to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-24 z-20 bg-gradient-to-l from-[#0a0a0a] to-transparent" />
+      <div className="relative border-y border-[var(--border)] bg-[var(--surface)]/30 backdrop-blur-md overflow-hidden z-10 py-4 flex items-center">
+        {/* Gradient fades for the edges */}
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-16 md:w-48 z-20 bg-gradient-to-r from-bg to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-16 md:w-48 z-20 bg-gradient-to-l from-bg to-transparent" />
 
-        <section className="border-y border-[var(--border)] py-5 overflow-hidden relative bg-[#0a0a0a] z-10">
-          <div
-            className="marquee-track flex items-center gap-8 whitespace-nowrap"
-            style={{ width: "2000px" }}
-          >
-            {Array(6)
-              .fill([
-                "Design Systems at Scale",
-                "AI & Generative Workflows",
-                "Sustainable Urban Coding",
-                "Modern Variable Typography",
-                "Minimalist Engineering Patterns",
-              ])
-              .flat()
-              .map((item, idx) => (
-                <span
-                  key={idx}
-                  className="flex items-center text-sm font-heading font-medium"
-                  style={{ color: "var(--muted)" }}
-                >
-                  <span
-                    className="font-heading text-sm font-semibold mr-2"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    TRENDING
-                  </span>
-                  <i
-                    className="fa-solid fa-circle text-[4px] mx-2"
-                    style={{ color: "var(--accent)" }}
-                  ></i>
+        <motion.div
+          className="flex whitespace-nowrap items-center w-max"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+        >
+          {Array(4)
+            .fill([
+              "Design Systems at Scale",
+              "AI & Generative Workflows",
+              "Sustainable Urban Coding",
+              "Modern Variable Typography",
+              "Minimalist Engineering Patterns",
+            ])
+            .flat()
+            .map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center px-6 md:px-10"
+              >
+                <span className="text-[var(--accent)] font-heading text-[10px] md:text-xs font-black tracking-widest uppercase mr-3 md:mr-4">
+                  Trending
+                </span>
+                <span className="text-[var(--fg)] font-body text-sm md:text-base font-medium">
                   {item}
                 </span>
-              ))}
-          </div>
-        </section>
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--border)] ml-12 md:ml-20" />
+              </div>
+            ))}
+        </motion.div>
       </div>
 
       {/* ═══════════════════════════ CATEGORIES SECTION (Step 6) ═══════════════════════════ */}
       <section
         id="categories"
-        className="py-24 lg:py-32 max-w-7xl mx-auto px-6 relative z-10"
+        className="py-16 w-full px-4 md:px-6 2xl:px-8 relative z-10"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <h2 className="font-heading text-3xl font-bold mb-2 text-[var(--fg)]">
-              Explore by Category
-            </h2>
-            <p className="font-body text-sm text-[var(--muted)]">
-              Filter posts by your favorite topics
-            </p>
-          </div>
-
-          {/* Pill Button HTML (Step 6.1) */}
-          <div className="flex flex-wrap gap-3" id="categoryContainer">
+        <div className="flex flex-col mb-10">
+          <h2 className="font-heading text-3xl font-bold mb-6 text-[var(--fg)]">
+            Explore by Category
+          </h2>
+          
+          {/* Minimal Horizontal Tabs */}
+          <div className="flex flex-nowrap items-center gap-x-8 border-b border-[var(--border)] w-full overflow-hidden pb-2">
             {categoriesList.map((cat) => (
               <button
                 key={cat.id}
-                className={`cat-pill px-5 py-2 rounded-full text-sm font-heading border border-[var(--border)] transition-all duration-300 font-medium ${
-                  activeCategory === cat.id
-                    ? "active bg-[var(--accent)] text-[#0a0a0a]"
-                    : ""
-                }`}
-                style={{
-                  color: activeCategory === cat.id ? "#0a0a0a" : "var(--muted)",
-                  background:
-                    activeCategory === cat.id ? "var(--accent)" : "transparent",
-                }}
                 onClick={() => setActiveCategory(cat.id)}
-                data-cat={cat.id}
+                className={`relative pb-3 transition-colors text-sm font-heading font-bold cursor-pointer whitespace-nowrap ${
+                  activeCategory === cat.id
+                    ? "text-[var(--fg)]"
+                    : "text-[var(--muted)] hover:text-[var(--fg)]"
+                }`}
               >
                 {cat.label}
+                {activeCategory === cat.id && (
+                  <motion.div
+                    layoutId="home-category-tab"
+                    className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[var(--accent)] rounded-t-full"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -454,99 +296,28 @@ export default function HomePage() {
 
         {/* ═══════════════════════════ BLOG POSTS GRID (Step 7) ═══════════════════════════ */}
         <div
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"
           id="postsGrid"
         >
           {filteredPosts.map((post, i) => (
-            <article
+            <motion.div 
               key={post.id}
-              className="post-card reveal rounded-2xl border border-[var(--border)] overflow-hidden flex flex-col"
-              style={{
-                background: "var(--card)",
-                transitionDelay: `${i * 0.08}s`,
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="h-full"
             >
-              {/* Image */}
-              <div className="overflow-hidden relative h-[200px]">
-                <img
-                  src={post.coverImage}
-                  alt={post.title}
-                  className="card-img w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Content */}
-              <div className="p-6 sm:p-8 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider"
-                    style={{
-                      background: "var(--accent-glow)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {post.category}
-                  </span>
-                  <span
-                    className="text-[11px]"
-                    style={{ color: "var(--muted)" }}
-                  >
-                    {post.readingTime}
-                  </span>
-                </div>
-
-                <h3
-                  className="font-heading text-lg font-bold leading-snug mb-2 line-clamp-2"
-                  style={{ color: "var(--fg)" }}
-                >
-                  {post.title}
-                </h3>
-
-                <p
-                  className="font-body text-sm leading-relaxed mb-4 line-clamp-2"
-                  style={{ color: "var(--muted)" }}
-                >
-                  {post.preview}
-                </p>
-
-                {/* Card Footer */}
-                <div className="mt-auto pt-4 border-t border-[var(--border)] flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={post.author.avatar}
-                      alt={post.author.name}
-                      className="w-7 h-7 rounded-full object-cover border border-[var(--border)]"
-                    />
-                    <div>
-                      <p className="text-xs font-medium text-[var(--fg)]">
-                        {post.author.name}
-                      </p>
-                      <p
-                        className="text-[10px]"
-                        style={{ color: "var(--muted)" }}
-                      >
-                        {post.date}
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/post/${post.id}`}
-                    className="text-[var(--accent)] hover:text-[var(--fg)] transition-colors text-xs font-heading font-bold inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    Read <i className="fa-solid fa-arrow-right text-[10px]"></i>
-                  </Link>
-                </div>
-              </div>
-            </article>
+              <BlogCard post={post} />
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* ═══════════════════════════ EDITOR'S PICK SECTION (Step 8) ═══════════════════════════ */}
-      <section className="pb-32 lg:pb-40 max-w-7xl mx-auto px-6 relative z-10">
+      <section className="pb-32 lg:pb-40 w-full px-4 md:px-6 2xl:px-8 relative z-10">
         <div
-          className="reveal rounded-2xl border border-[var(--border)] overflow-hidden"
+          onClick={() => router.push(`/post/${editorsPickPost.id}`)}
+          className="reveal rounded-2xl border border-[var(--border)] overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300"
           style={{ background: "var(--card)" }}
         >
           <div className="grid lg:grid-cols-5">
@@ -584,7 +355,11 @@ export default function HomePage() {
               </p>
               {/* Author + Read CTA */}
               <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--border)]">
-                <div className="flex items-center gap-3">
+                <Link 
+                  href={`/profile/${editorsPickPost.author.username || editorsPickPost.author.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                >
                   <Image
                     src={editorsPickPost.author.avatar}
                     alt={editorsPickPost.author.name}
@@ -600,9 +375,10 @@ export default function HomePage() {
                       {editorsPickPost.date}
                     </p>
                   </div>
-                </div>
+                </Link>
                 <Link
                   href={`/post/${editorsPickPost.id}`}
+                  onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 font-bold text-sm cursor-pointer"
                 >
                   Read Full Story{" "}
