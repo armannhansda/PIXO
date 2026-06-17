@@ -16,31 +16,33 @@ const dmSans = DM_Sans({
   variable: "--font-body",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "PIXO | Modern Publishing",
-    template: "%s | PIXO",
-  },
-  description: "A modern, fast, and beautiful platform for writers and readers.",
+export const metadata = {
+  title: "PIXO - Share Your Stories",
+  description:
+    "A modern blogging platform for writers and creators.",
+
   openGraph: {
-    title: "PIXO | Modern Publishing",
-    description: "A modern, fast, and beautiful platform for writers and readers.",
-    url: "https://pixo.app",
+    title: "PIXO - Share Your Stories",
+    description:
+      "A modern blogging platform for writers and creators.",
+    url: "https://pixo.armanx.online",
     siteName: "PIXO",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1200&h=630",
+        url: "https://pixo.armanx.online",
         width: 1200,
         height: 630,
       },
     ],
-    locale: "en_US",
     type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
-    title: "PIXO | Modern Publishing",
-    description: "A modern, fast, and beautiful platform for writers and readers.",
+    title: "PIXO - Share Your Stories",
+    description:
+      "A modern blogging platform for writers and creators.",
+    images: ["https://pixo.armanx.online"],
   },
 };
 
