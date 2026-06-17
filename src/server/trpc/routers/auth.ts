@@ -263,8 +263,13 @@ export const authRouter = createTRPCRouter({
 
   // Get current authenticated user
   me: publicProcedure
-    .use(authMiddleware)
     .query(async ({ ctx }) => {
+      if (!isAuthenticated(ctx)) {
+        const cookieStore = await cookies();
+        cookieStore.delete("session-token");
+        return null;
+      }
+
       const userId = Number(ctx.user.id);
 
       const user = await ctx.db.query.users.findFirst({
@@ -272,10 +277,9 @@ export const authRouter = createTRPCRouter({
       });
 
       if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+        const cookieStore = await cookies();
+        cookieStore.delete("session-token");
+        return null;
       }
 
       return getUserResponse(user);

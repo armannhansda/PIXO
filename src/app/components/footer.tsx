@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Twitter, Github, Instagram } from "lucide-react";
 
 export function Footer() {
   const platformLinks = [
@@ -44,21 +45,21 @@ export function Footer() {
                 className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--accent-glow)] transition-all duration-300"
                 aria-label="Twitter"
               >
-                <i className="fa-brands fa-x-twitter text-xs" style={{ color: "var(--muted)" }}></i>
+                <Twitter size={16} color="var(--muted)" />
               </Link>
               <Link
-                href="/"
+                href="https://github.com/armannhansda/PIXO"
                 className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--accent-glow)] transition-all duration-300"
                 aria-label="GitHub"
               >
-                <i className="fa-brands fa-github text-xs" style={{ color: "var(--muted)" }}></i>
+                <Github size={16} color="var(--muted)" />
               </Link>
               <Link
                 href="/"
                 className="w-9 h-9 rounded-lg border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] hover:bg-[var(--accent-glow)] transition-all duration-300"
                 aria-label="Instagram"
               >
-                <i className="fa-brands fa-instagram text-xs" style={{ color: "var(--muted)" }}></i>
+                <Instagram size={16} color="var(--muted)" />
               </Link>
             </div>
           </div>

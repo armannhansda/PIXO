@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { Clock } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Clock, Heart, MessageCircle, Bookmark, Twitter, Facebook, Link as LinkIcon } from "lucide-react";
 import { ContentRenderer } from "../../components/content-renderer";
 import { CommentsSection } from "../../components/comments-section";
 import { api } from "@/lib/trpc";
@@ -13,6 +13,7 @@ import { Footer } from "../../components/footer";
 
 export default function BlogPostPage() {
   const { id } = useParams();
+  const router = useRouter();
   const postId = Number(id);
 
   // Backend queries
@@ -138,35 +139,51 @@ export default function BlogPostPage() {
   };
 
   const toggleLike = () => {
+    const previousLiked = localLiked;
+    const previousCount = localLikeCount;
+    setLocalLiked(!previousLiked);
+    setLocalLikeCount((c) => (previousLiked ? c - 1 : c + 1));
+
     likeMutation.mutate(
       { postId },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           utils.likes.status.invalidate({ postId });
-          showToast(!localLiked ? "Added to liked articles." : "Removed from liked articles.");
+          showToast(data.liked ? "Added to liked articles." : "Removed from liked articles.");
         },
-        onError: () => {
-          // Offline fallback
-          setLocalLiked(!localLiked);
-          setLocalLikeCount((c) => (localLiked ? c - 1 : c + 1));
-          showToast(!localLiked ? "Post liked! (Mock)" : "Post unliked. (Mock)");
+        onError: (err) => {
+          setLocalLiked(previousLiked);
+          setLocalLikeCount(previousCount);
+          if (err.data?.code === "UNAUTHORIZED") {
+            showToast("Please log in to like articles.");
+            setTimeout(() => router.push("/login"), 1500);
+          } else {
+            showToast("Failed to update like status.");
+          }
         },
       }
     );
   };
 
   const toggleSave = () => {
+    const previousSaved = localSaved;
+    setLocalSaved(!previousSaved);
+
     bookmarkMutation.mutate(
       { postId },
       {
         onSuccess: () => {
           utils.bookmarks.status.invalidate({ postId });
-          showToast(!localSaved ? "Bookmarked successfully." : "Bookmark removed.");
+          showToast(!previousSaved ? "Bookmarked successfully." : "Bookmark removed.");
         },
-        onError: () => {
-          // Offline fallback
-          setLocalSaved(!localSaved);
-          showToast(!localSaved ? "Bookmarked successfully. (Mock)" : "Bookmark removed. (Mock)");
+        onError: (err) => {
+          setLocalSaved(previousSaved);
+          if (err.data?.code === "UNAUTHORIZED") {
+            showToast("Please log in to save articles.");
+            setTimeout(() => router.push("/login"), 1500);
+          } else {
+            showToast("Failed to update bookmark.");
+          }
         },
       }
     );
@@ -302,7 +319,7 @@ export default function BlogPostPage() {
                       : "border-[var(--border)] text-[var(--muted)] hover:border-red-500/30 hover:text-red-500"
                   }`}
                 >
-                  <i className={`fa-solid fa-heart text-xs`}></i>
+                  <Heart size={14} className={localLiked ? "fill-current" : ""} />
                   {localLikeCount}
                 </button>
                 <button
@@ -312,7 +329,7 @@ export default function BlogPostPage() {
                   }}
                   className="flex items-center gap-2 px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted)] hover:text-[var(--fg)] transition-colors duration-300 font-heading font-medium text-xs cursor-pointer"
                 >
-                  <i className="fa-solid fa-comment text-xs"></i>
+                  <MessageCircle size={14} />
                   Comments
                 </button>
               </div>
@@ -326,7 +343,7 @@ export default function BlogPostPage() {
                   }`}
                   aria-label="Save Article"
                 >
-                  <i className="fa-solid fa-bookmark text-sm"></i>
+                  <Bookmark size={16} className={localSaved ? "fill-current" : ""} />
                 </button>
               </div>
             </div>
@@ -375,26 +392,33 @@ export default function BlogPostPage() {
                 </h4>
                 <div className="flex gap-2.5">
                   {[
-                    { icon: "fa-brands fa-x-twitter", label: "Twitter" },
-                    { icon: "fa-brands fa-facebook-f", label: "Facebook" },
-                    { icon: "fa-solid fa-link", label: "Copy Link" },
-                  ].map((item, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        if (item.label === "Copy Link") {
-                          navigator.clipboard.writeText(window.location.href);
-                          showToast("Link copied to clipboard!");
-                        } else {
-                          showToast(`Sharing via ${item.label}...`);
-                        }
-                      }}
-                      className="w-9 h-9 bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] rounded-xl text-[var(--muted)] hover:text-[var(--fg)] transition-all duration-300 cursor-pointer flex items-center justify-center"
-                      aria-label={`Share via ${item.label}`}
-                    >
-                      <i className={`${item.icon} text-xs`}></i>
-                    </button>
-                  ))}
+                    { icon: Twitter, label: "Twitter" },
+                    { icon: Facebook, label: "Facebook" },
+                    { icon: LinkIcon, label: "Copy Link" },
+                  ].map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (item.label === "Copy Link") {
+                            navigator.clipboard.writeText(window.location.href);
+                            showToast("Link copied to clipboard!");
+                          } else if (item.label === "Twitter") {
+                            const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`;
+                            window.open(url, '_blank');
+                          } else if (item.label === "Facebook") {
+                            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+                            window.open(url, '_blank');
+                          }
+                        }}
+                        className="w-9 h-9 bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--border)] rounded-xl text-[var(--muted)] hover:text-[var(--fg)] transition-all duration-300 cursor-pointer flex items-center justify-center"
+                        aria-label={`Share via ${item.label}`}
+                      >
+                        <Icon size={14} />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -407,7 +431,7 @@ export default function BlogPostPage() {
                     : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] bg-[var(--surface)]"
                 }`}
               >
-                <i className="fa-solid fa-bookmark text-xs"></i>
+                <Bookmark size={14} className={localSaved ? "fill-current" : ""} />
                 {localSaved ? "Saved to Bookmarks" : "Bookmark Article"}
               </button>
             </div>

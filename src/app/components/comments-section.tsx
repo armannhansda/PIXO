@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 interface CommentsSectionProps {
   postId: number;
@@ -10,6 +11,9 @@ interface CommentsSectionProps {
 
 export function CommentsSection({ postId }: CommentsSectionProps) {
   const [content, setContent] = useState("");
+  const router = useRouter();
+  
+  const { data: me } = api.auth.me.useQuery();
   
   // Use tRPC hooks
   const { data: commentsData, isLoading } = api.comments.listByPost.useQuery({
@@ -26,6 +30,14 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
       utils.comments.listByPost.invalidate({ postId });
       utils.comments.count.invalidate({ postId });
     },
+    onError: (err) => {
+      if (err.data?.code === "UNAUTHORIZED") {
+        alert("Please log in to post a comment.");
+        router.push("/login");
+      } else {
+        alert(err.message || "Failed to post comment.");
+      }
+    }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,19 +60,20 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Write a comment..."
+            placeholder={me ? "Write a comment..." : "Log in to write a comment..."}
             rows={3}
-            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl py-3 px-4 text-sm text-[var(--fg)] font-body focus:ring-2 focus:ring-[var(--accent)] resize-none"
-            disabled={createComment.isPending}
+            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl py-3 px-4 text-sm text-[var(--fg)] font-body focus:ring-2 focus:ring-[var(--accent)] resize-none disabled:opacity-50"
+            disabled={createComment.isPending || me === null}
           />
         </div>
         <div className="flex justify-end">
           <button
-            type="submit"
-            disabled={!content.trim() || createComment.isPending}
+            type={me ? "submit" : "button"}
+            onClick={!me ? () => router.push("/login") : undefined}
+            disabled={me ? (!content.trim() || createComment.isPending) : false}
             className="px-6 py-2 rounded-xl bg-[var(--accent)] text-[#0a0a0a] font-bold text-sm hover:bg-transparent hover:text-[var(--accent)] border border-[var(--accent)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {createComment.isPending ? "Posting..." : "Post Comment"}
+            {!me ? "Log in to Comment" : createComment.isPending ? "Posting..." : "Post Comment"}
           </button>
         </div>
       </form>

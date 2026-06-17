@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Moon, Sun } from "lucide-react";
+import { User, Moon, Sun, Search, Pencil, Menu, X } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
@@ -128,13 +128,13 @@ export function Navbar() {
               className="text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
               aria-label="Search"
             >
-              <i className="fa-solid fa-magnifying-glass"></i>
+              <Search size={18} />
             </button>
             <button
               onClick={() => goTo(writeHref)}
               className="btn-accent px-5 py-2 rounded-full border border-[var(--accent)] bg-[var(--accent)] text-[#0a0a0a] hover:bg-transparent hover:text-[var(--accent)] transition-all duration-300 flex items-center gap-2 font-medium"
             >
-              Write <i className="fa-solid fa-pen-nib text-xs"></i>
+              Write <Pencil size={14} />
             </button>
 
             {me ? (
@@ -170,7 +170,7 @@ export function Navbar() {
             className="md:hidden text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
             aria-label="Open menu"
           >
-            <i className="fa-solid fa-bars text-[var(--fg)]"></i>
+            <Menu size={24} className="text-[var(--fg)]" />
           </button>
         </div>
       </nav>
@@ -188,7 +188,7 @@ export function Navbar() {
           className="absolute top-6 right-6 text-[var(--fg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
           aria-label="Close menu"
         >
-          <i className="fa-solid fa-xmark text-2xl"></i>
+          <X size={28} />
         </button>
         
         <button
@@ -219,7 +219,7 @@ export function Navbar() {
           onClick={() => goTo(writeHref)}
           className="mobile-link text-2xl font-heading hover:text-[var(--accent)] transition-colors flex items-center gap-2"
         >
-          Write <i className="fa-solid fa-pen-nib text-sm"></i>
+          Write <Pencil size={16} />
         </button>
 
         {me ? (
