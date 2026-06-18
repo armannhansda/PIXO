@@ -218,7 +218,7 @@ export default function HomePage() {
                         {featuredPost.author.name}
                       </p>
                       <p className="text-sm text-white/60 flex items-center gap-2 mt-0.5 font-medium">
-                        {featuredPost.date} <span className="w-1 h-1 rounded-full bg-white/30"></span> {featuredPost.readingTime}
+                        {featuredPost.date} 
                       </p>
                     </div>
                   </Link>

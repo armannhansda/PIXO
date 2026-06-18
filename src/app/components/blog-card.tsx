@@ -247,10 +247,10 @@ export function BlogCard({
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-muted-foreground text-[11px] font-medium">
+                {/* <div className="flex items-center gap-1 text-muted-foreground text-[11px] font-medium">
                   <Clock size={10} />
                   <span>{post.readingTime}</span>
-                </div>
+                </div> */}
                 <button
                   onClick={handleLike}
                   className={`flex items-center gap-1 transition-colors ${liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
