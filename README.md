@@ -1,8 +1,9 @@
 # PIXO — Modern Blogging Platform
 
-A full-featured blogging platform built with **Next.js 15**, **TypeScript**, **tRPC**, **Drizzle ORM**, and **PostgreSQL**. Create, share, and discover stories with a beautiful, responsive UI.
+A full-featured blogging platform built with **Next.js 16**, **React 19**, **TypeScript**, **tRPC**, **Drizzle ORM**, and **PostgreSQL**. Create, share, and discover stories with a beautiful, responsive UI.
 
-![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)
 ![tRPC](https://img.shields.io/badge/tRPC-11-2596BE)
@@ -65,7 +66,7 @@ A full-featured blogging platform built with **Next.js 15**, **TypeScript**, **t
 
 | Layer      | Technology                                         |
 | ---------- | -------------------------------------------------- |
-| Framework  | Next.js 15 (App Router, Turbopack)                 |
+| Framework  | Next.js 16 (App Router, Turbopack)                 |
 | Language   | TypeScript                                         |
 | UI         | Tailwind CSS 4, Radix UI, shadcn/ui, Framer Motion |
 | API        | tRPC 11 (end-to-end type safety)                   |
@@ -74,6 +75,7 @@ A full-featured blogging platform built with **Next.js 15**, **TypeScript**, **t
 | State      | TanStack React Query (via tRPC)                    |
 | Validation | Zod                                                |
 | Markdown   | react-markdown, @uiw/react-md-editor               |
+| Caching/RL | Upstash Redis & Rate Limiting                      |
 | Deployment | Vercel                                             |
 
 ---
@@ -161,7 +163,7 @@ PIXO/
 
 ### Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 20+
 - **PostgreSQL** 12+
 - **npm**
 
@@ -196,6 +198,10 @@ JWT_SECRET=your_secret_key_min_32_characters
 
 # Google OAuth (optional)
 GOOGLE_CLIENT_ID=your_google_client_id
+
+# Upstash Redis (Rate Limiting)
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
 ```
 
 ### 4. Set up the database
