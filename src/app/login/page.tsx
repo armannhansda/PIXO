@@ -1,30 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "@/lib/trpc";
-import { IMAGES } from "../components/mock-data";
 import { toast } from "react-hot-toast";
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: Record<string, unknown>) => void;
-          renderButton: (
-            el: HTMLElement,
-            config: Record<string, unknown>
-          ) => void;
-        };
-      };
-    };
-  }
-}
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,35 +35,7 @@ export default function LoginPage() {
     onError: (err) => setError(err.message),
   });
 
-  const googleLoginMutation = api.auth.googleLogin.useMutation({
-    onSuccess: () => {
-      localStorage.setItem("authToken", "true");
-      router.push("/dashboard");
-      router.refresh();
-    },
-    onError: (err) => setError(err.message),
-  });
 
-  useEffect(() => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) return;
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      window.google?.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response: { credential: string }) => {
-          googleLoginMutation.mutate({ credential: response.credential });
-        },
-      });
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isLoading = loginMutation.isPending || signupMutation.isPending;
 
@@ -97,31 +51,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center font-body bg-[#050505] text-fg relative overflow-hidden px-4">
-      {/* Background Mesh Gradient */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            opacity: [0.3, 0.5, 0.3]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(232,160,35,0.15) 0%, transparent 70%)" }}
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.5, 1],
-            rotate: [0, -90, 0],
-            opacity: [0.2, 0.4, 0.2]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full blur-[100px]"
-          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)" }}
-        />
-        {/* Subtle Noise */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')" }}></div>
-      </div>
+
 
       {/* Back Button */}
       <Link 
